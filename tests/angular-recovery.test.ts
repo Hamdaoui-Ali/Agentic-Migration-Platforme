@@ -3,7 +3,6 @@ import test from "node:test";
 
 import { applyG01Decision, createRunFromApprovedPreflight, prepareAngularPreflight } from "../src/stacks/angular/workflow/setup.ts";
 import { applyAngularGateDecision, createAngularRunModel } from "../src/stacks/angular/workflow/run.ts";
-import { applyAngularStageGateDecision } from "../src/stacks/angular/workflow/proven.ts";
 import {
   advanceAngularLiveExecution,
   angularLiveExecutionDuration,

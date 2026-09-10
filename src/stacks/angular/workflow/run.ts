@@ -24,8 +24,9 @@ function llmProvenance(
   outputTokens = 0,
 ): AngularLlmProvenance {
   return {
-    provider: "azure_openai",
-    deployment: "gpt-5-mini",
+    provider: "azure_foundry",
+    deployment:
+      role === "phase_reviewer" ? "Llama-3.3-70B-Instruct" : "gpt-5-mini",
     role,
     promptVersion:
       role === "phase_proposer"
@@ -721,7 +722,7 @@ export function completeAngularAnalysisExecution(
         category: "ANALYSIS",
         title: "Analysis Proposer + independent Reviewer completed",
         summary:
-          "Repository-grounded Angular 11 CRUD findings, Azure OpenAI proposer/reviewer provenance, and evidence references were bound to the G04 package.",
+          "Repository-grounded Angular 11 CRUD findings, Azure AI Foundry proposer/reviewer provenance, and evidence references were bound to the G04 package.",
         timestamp: now,
         checksum: stableDisplayChecksum(`${run.id}:analysis:completed`),
       },

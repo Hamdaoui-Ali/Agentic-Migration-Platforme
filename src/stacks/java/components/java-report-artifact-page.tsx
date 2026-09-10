@@ -36,7 +36,7 @@ export function JavaReportArtifactPage() {
             href={"/java/migrations/" + job.id}
             className="mf-focus text-sm font-semibold text-[var(--mf-primary)] hover:underline"
           >
-            ← Back to Control Tower
+            ← Back to Migration Workspace
           </Link>
         </div>
         <Panel>

@@ -159,7 +159,7 @@ test("G03 approval runs Azure analysis proposer then independent reviewer before
   );
   assert.equal(
     run.liveExecution?.steps.some(
-      (step) => step.role === "phase_reviewer" && step.provider === "azure_openai",
+      (step) => step.role === "phase_reviewer" && step.provider === "azure_foundry",
     ),
     true,
   );
@@ -168,7 +168,7 @@ test("G03 approval runs Azure analysis proposer then independent reviewer before
   assert.equal(run.currentGate, "G04");
   assert.equal(run.analysis.status, "READY_FOR_REVIEW");
   assert.equal(run.analysis.proposer.deployment, "gpt-5-mini");
-  assert.equal(run.analysis.reviewer.deployment, "gpt-5-mini");
+  assert.equal(run.analysis.reviewer.deployment, "Llama-3.3-70B-Instruct");
   assert.equal(run.analysis.reviewerVerdict, "ACCEPT");
 });
 

@@ -5,7 +5,7 @@ import { seedJavaJob } from "../src/stacks/java/scenarios/seeds.ts";
 
 test("Java order-service deep link opens at the real analysis_review boundary", () => {
   const job = seedJavaJob("java-order-service");
-  assert.equal(job.currentStage, 1);
+  assert.equal(job.currentStage, 2);
   assert.equal(job.currentPhase, "ANALYSIS_AGENT");
   assert.equal(job.currentGate, "analysis_review");
   assert.equal(job.phaseGates.at(-1)?.type, "analysis_review");

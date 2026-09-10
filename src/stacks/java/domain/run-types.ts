@@ -67,7 +67,7 @@ export interface JavaPipelinePhase {
 }
 
 export interface JavaLlmProvenance {
-  provider: "azure_openai" | "azure_foundry";
+  provider: "azure_foundry";
   deployment: "gpt-5-mini" | "Llama-3.3-70B-Instruct";
   role: "phase_proposer" | "phase_reviewer";
   status: "SUCCEEDED";

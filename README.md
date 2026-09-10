@@ -31,3 +31,7 @@ Read:
 - `docs/superpowers/plans/2026-08-31-migration-factory-presentation-frontend.md`
 
 The presentation data is deterministic and local to this standalone frontend. Product copy remains normal Migration Factory language; implementation-storage terminology is not exposed in the visible UI.
+
+## Recording
+
+Use the prepared presenter routes and accelerated logical clock documented in [docs/DEMO-RECORDING.md](docs/DEMO-RECORDING.md). The frontend is intentionally local and deterministic for the recording; it does not replace the protected CGI backend or source repositories.

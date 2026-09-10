@@ -6,6 +6,11 @@ import { useParams } from "next/navigation";
 import { ProductHeader } from "@/components/shared/product-header";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
+import {
+  playbackNow,
+  rebaseLiveExecutionStart,
+  usePlaybackSpeed,
+} from "@/lib/presenter-mode";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -75,6 +80,7 @@ export function JavaCockpitPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
+  const playbackSpeed = usePlaybackSpeed();
 
   const liveExecution = job.liveExecution;
 
@@ -83,7 +89,17 @@ export function JavaCockpitPage() {
 
     const timer = window.setInterval(() => {
       setJob((current) => {
-        const next = advanceJavaLiveExecution(current, Date.now());
+        const realNowMs = Date.now();
+        const logicalNowMs = playbackNow(
+          current.liveExecution?.startedAtMs ?? realNowMs,
+          realNowMs,
+          playbackSpeed,
+        );
+        const next = rebaseLiveExecutionStart(
+          advanceJavaLiveExecution(current, logicalNowMs),
+          realNowMs,
+          playbackSpeed,
+        );
         if (next !== current) {
           putJavaJob(next);
         }
@@ -92,7 +108,7 @@ export function JavaCockpitPage() {
     }, 250);
 
     return () => window.clearInterval(timer);
-  }, [liveExecution]);
+  }, [liveExecution, playbackSpeed]);
 
   useEffect(() => {
     if (!liveExecution?.id) return;
@@ -219,7 +235,7 @@ export function JavaCockpitPage() {
   return (
     <div className="mf-page">
       <ProductHeader
-        breadcrumb="Spring Boot / Control Tower"
+        breadcrumb="Spring Boot / Migration Workspace"
         actions={
           <div className="flex items-center gap-2">
             <WorkspaceResetButton onReset={resetJavaState} />
@@ -284,7 +300,7 @@ export function JavaCockpitPage() {
             items={tabs}
             active={active}
             onChange={setActive}
-            ariaLabel="Spring Boot Control Tower workspaces"
+            ariaLabel="Spring Boot Migration Workspace tabs"
           />
         </div>
 

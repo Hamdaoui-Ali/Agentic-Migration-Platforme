@@ -23,6 +23,36 @@ function createJavaLiveExecutionRaw(
   stage: number | null,
 ): JavaLiveExecution {
   const stageLabel = stage ? "Stage " + stage : "current stage";
+  const planningContext =
+    stage === 2
+      ? {
+          source: "Spring Boot 2.7 / Java 11",
+          route: "2.7→3.5/J17 · J17→J21 · 3.5→4.0",
+          routeSteps: [
+            "Stage 2: Spring Boot 2.7 → 3.5 on Java 17.",
+            "Stage 3: Java 17 → Java 21 while Spring Boot 3.5 remains stable.",
+            "Stage 4: Spring Boot 3.5 → 4.0 on Java 21.",
+          ],
+        }
+      : stage === 3
+        ? {
+            source: "Spring Boot 3.5 / Java 17",
+            route: "3.5/J17→3.5/J21 · 3.5→4.0",
+            routeSteps: [
+              "Stage 3: Java 17 → Java 21 while Spring Boot 3.5 remains stable.",
+              "Stage 4: Spring Boot 3.5 → 4.0 on Java 21.",
+            ],
+          }
+        : {
+            source: "Spring Boot 2.1 / Java 11",
+            route: "2.1→2.7 · 2.7→3.5/J17 · J17→J21 · 3.5→4.0",
+            routeSteps: [
+              "Stage 1: Spring Boot 2.1 → 2.7 on Java 11.",
+              "Stage 2: Spring Boot 2.7 → 3.5 on Java 17.",
+              "Stage 3: Java 17 → Java 21 while Spring Boot 3.5 remains stable.",
+              "Stage 4: Spring Boot 3.5 → 4.0 on Java 21.",
+            ],
+          };
 
   if (kind === "PREFLIGHT") {
     return {
@@ -77,13 +107,13 @@ function createJavaLiveExecutionRaw(
           id: "preflight-ai",
           label: "Check AI role readiness",
           node: "preflight.ai_readiness",
-          detail: "Verify proposer, reviewer, and fallback role configuration.",
+          detail: "Verify proposer and reviewer role configuration.",
           durationMs: 900,
           kind: "SYSTEM",
           logs: [
             "phase_proposer: gpt-5-mini READY",
             "phase_reviewer: Llama-3.3-70B-Instruct READY",
-            "reviewer fallback: gpt-5-mini READY",
+            "reviewer fallback disabled for this scenario",
           ],
         },
       ],
@@ -141,11 +171,11 @@ function createJavaLiveExecutionRaw(
           detail: "Generate structured migration analysis from bounded evidence.",
           durationMs: 1800,
           kind: "LLM",
-          provider: "azure_openai",
+          provider: "azure_foundry",
           deployment: "gpt-5-mini",
           role: "phase_proposer",
           logs: [
-            "Azure OpenAI invocation started",
+            "Azure AI Foundry invocation started",
             "role=phase_proposer model=gpt-5-mini",
             "structured analysis received",
             "schema validation PASS",
@@ -202,9 +232,9 @@ function createJavaLiveExecutionRaw(
           kind: "SYSTEM",
           logs: [
             "Accepted analysis revision loaded.",
-            "Source profile bound: Spring Boot 2.1 / Java 11.",
+            "Source profile bound: " + planningContext.source + ".",
             "Target profile bound: Spring Boot 4.0 / Java 21.",
-            "Route stages bound: 2.1→2.7 · 2.7→3.5/J17 · J17→J21 · 3.5→4.0.",
+            "Route stages bound: " + planningContext.route + ".",
             "Maven execution authority and proof level bound.",
           ],
         },
@@ -217,10 +247,7 @@ function createJavaLiveExecutionRaw(
           durationMs: 3800,
           kind: "SYSTEM",
           logs: [
-            "Stage 1: Spring Boot 2.1 → 2.7 on Java 11.",
-            "Stage 2: Spring Boot 2.7 → 3.5 on Java 17.",
-            "Stage 3: Java 17 → Java 21 while Spring Boot 3.5 remains stable.",
-            "Stage 4: Spring Boot 3.5 → 4.0 on Java 21.",
+            ...planningContext.routeSteps,
             "Continuation policy=AUTO_ON_GREEN.",
           ],
         },
@@ -284,11 +311,11 @@ function createJavaLiveExecutionRaw(
             "Produce the structured planning rationale from deterministic route, Maven, runtime, assessment, validation, and repair constraints.",
           durationMs: 7200,
           kind: "LLM",
-          provider: "azure_openai",
+          provider: "azure_foundry",
           deployment: "gpt-5-mini",
           role: "phase_proposer",
           logs: [
-            "Azure OpenAI invocation started.",
+            "Azure AI Foundry invocation started.",
             "role=phase_proposer model=gpt-5-mini",
             "Route rationale generated.",
             "Java/Maven/runtime constraints explained.",

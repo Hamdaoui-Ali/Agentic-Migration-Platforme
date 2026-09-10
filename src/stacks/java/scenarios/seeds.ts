@@ -1,6 +1,7 @@
 import type {
   JavaContinuationPolicy,
   JavaJobSeed,
+  JavaProfileId,
 } from "../domain/types.ts";
 import type { JavaJobModel } from "../domain/run-types.ts";
 import {
@@ -31,13 +32,14 @@ const TERMINAL_TARGETS = [
 function seedConfiguration(
   name: string,
   continuationPolicy: JavaContinuationPolicy,
+  sourceProfile: JavaProfileId = "SB_2_1_J11",
 ) {
   return prepareJavaMigration({
     name,
     sourcePath: "/workspace/" + name.toLowerCase().replaceAll(" ", "-"),
     outputParent: "/workspace/migration-output",
     environmentImport: "Development baseline",
-    sourceProfile: "SB_2_1_J11",
+    sourceProfile,
     targetProfile: "SB_4_0_J21",
     continuationPolicy,
     proofLevel: "STRICT",
@@ -48,9 +50,10 @@ function baseJob(
   id: string,
   name: string,
   continuationPolicy: JavaContinuationPolicy,
+  sourceProfile: JavaProfileId = "SB_2_1_J11",
 ): JavaJobModel {
   const seed: JavaJobSeed = {
-    ...createJavaJob(seedConfiguration(name, continuationPolicy)),
+    ...createJavaJob(seedConfiguration(name, continuationPolicy, sourceProfile)),
     id,
     status: "RUNNING",
   };
@@ -91,13 +94,13 @@ function completeCurrentGreenStage(job: JavaJobModel): JavaJobModel {
 }
 
 function seedJavaRepairScenario(): JavaJobModel {
-  let job = baseJob(
+  const job = baseJob(
     "java-repair-service",
     "Payments Service",
     "AUTO_ON_GREEN",
+    "SB_2_7_J11",
   );
 
-  job = completeCurrentGreenStage(job);
   return advanceJavaPipeline(runToTestValidation(job));
 }
 
@@ -133,6 +136,7 @@ export function seedJavaJob(id: string): JavaJobModel {
         id,
         "Order Service",
         "MANUAL_ON_WARNING_OR_FAILURE",
+        "SB_2_7_J11",
       ),
     );
   }

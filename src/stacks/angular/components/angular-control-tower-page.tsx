@@ -6,6 +6,11 @@ import { useParams } from "next/navigation";
 import { ProductHeader } from "@/components/shared/product-header";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
+import {
+  playbackNow,
+  rebaseLiveExecutionStart,
+  usePlaybackSpeed,
+} from "@/lib/presenter-mode";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs } from "@/components/ui/tabs";
 import type {
@@ -53,6 +58,7 @@ export function AngularControlTowerPage() {
   const [error, setError] = useState<string | null>(null);
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
+  const playbackSpeed = usePlaybackSpeed();
 
   const liveExecution = run.liveExecution;
 
@@ -61,7 +67,17 @@ export function AngularControlTowerPage() {
 
     const timer = window.setInterval(() => {
       setRun((current) => {
-        const next = advanceAngularLiveExecution(current, Date.now());
+        const realNowMs = Date.now();
+        const logicalNowMs = playbackNow(
+          current.liveExecution?.startedAtMs ?? realNowMs,
+          realNowMs,
+          playbackSpeed,
+        );
+        const next = rebaseLiveExecutionStart(
+          advanceAngularLiveExecution(current, logicalNowMs),
+          realNowMs,
+          playbackSpeed,
+        );
         if (next !== current) {
           putAngularRun(next);
         }
@@ -70,7 +86,7 @@ export function AngularControlTowerPage() {
     }, 250);
 
     return () => window.clearInterval(timer);
-  }, [liveExecution]);
+  }, [liveExecution, playbackSpeed]);
 
   useEffect(() => {
     if (!liveExecution?.id) return;
@@ -169,7 +185,7 @@ export function AngularControlTowerPage() {
   return (
     <div className="mf-page">
       <ProductHeader
-        breadcrumb="Angular / Control Tower"
+        breadcrumb="Angular / Migration Workspace"
         actions={
           <div className="flex items-center gap-2">
             <WorkspaceResetButton onReset={resetAngularState} />
@@ -223,7 +239,7 @@ export function AngularControlTowerPage() {
         ) : null}
 
         <div className="mt-7">
-          <Tabs items={tabs} active={active} onChange={setActive} ariaLabel="Angular Control Tower workspaces" />
+          <Tabs items={tabs} active={active} onChange={setActive} ariaLabel="Angular Migration Workspace tabs" />
         </div>
 
         <div className="mt-6">

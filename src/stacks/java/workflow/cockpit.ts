@@ -67,7 +67,7 @@ function javaLlmProvenance(
   }
 
   return {
-    provider: "azure_openai",
+    provider: "azure_foundry",
     deployment: "gpt-5-mini",
     role,
     status: "SUCCEEDED",

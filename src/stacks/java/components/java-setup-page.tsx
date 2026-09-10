@@ -37,7 +37,7 @@ export function JavaSetupPage() {
   const [outputParent, setOutputParent] = useState("/workspace/migration-output");
   const [environmentImport, setEnvironmentImport] = useState("Development baseline");
   const [sourceProfile, setSourceProfile] = useState<JavaProfileId>("SB_2_7_J11");
-  const [targetProfile, setTargetProfile] = useState<JavaProfileId>("SB_3_5_J21");
+  const [targetProfile, setTargetProfile] = useState<JavaProfileId>("SB_4_0_J21");
   const [continuationPolicy, setContinuationPolicy] =
     useState<JavaContinuationPolicy>("MANUAL_ON_WARNING_OR_FAILURE");
   const [proofLevel, setProofLevel] = useState<JavaProofLevel>("STRICT");
@@ -100,7 +100,7 @@ export function JavaSetupPage() {
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">New migration</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--mf-text-muted)]">
-            Configure the project, runtime profiles, proof policy, migration route, and continuation behavior before the Java Control Tower starts its phase pipeline.
+            Configure the project, runtime profiles, proof policy, migration route, and continuation behavior before the Java Migration Workspace starts its phase pipeline.
           </p>
         </div>
 

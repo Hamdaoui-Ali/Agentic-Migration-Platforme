@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LiveExecution } from "@/domain/live-execution";
 import { projectLiveExecution } from "@/domain/live-execution";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { playbackNow, usePlaybackSpeed } from "@/lib/presenter-mode";
 
 export function LiveExecutionPanel({
   execution,
@@ -16,16 +17,21 @@ export function LiveExecutionPanel({
   description: string;
 }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const playbackSpeed = usePlaybackSpeed();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNowMs(Date.now()), 250);
     return () => window.clearInterval(timer);
   }, [execution.id]);
 
-  const projection = useMemo(
-    () => projectLiveExecution(execution, nowMs),
-    [execution, nowMs],
-  );
+  const projection = useMemo(() => {
+    const logicalNowMs = playbackNow(
+      execution.startedAtMs,
+      nowMs,
+      playbackSpeed,
+    );
+    return projectLiveExecution(execution, logicalNowMs);
+  }, [execution, nowMs, playbackSpeed]);
 
   const visibleLogs = projection.steps.flatMap((step) =>
     step.visibleLogs.map((line) => ({
@@ -124,7 +130,7 @@ export function LiveExecutionPanel({
                     {step.provider ? (
                       <RuntimeChip
                         label="Provider"
-                        value={step.provider.replaceAll("_", " ")}
+                        value={providerLabel(step.provider)}
                       />
                     ) : null}
                     {step.deployment ? (
@@ -185,6 +191,11 @@ export function LiveExecutionPanel({
       </div>
     </section>
   );
+}
+
+function providerLabel(provider: string): string {
+  if (provider === "azure_foundry") return "Azure AI Foundry";
+  return provider.replaceAll("_", " ");
 }
 
 function RuntimeChip({

@@ -98,7 +98,7 @@ export default function Home() {
                 eyebrow="Backend"
                 title="Spring Boot Migration"
                 description="Move Spring Boot applications across governed profiles with reviewed analysis and planning, Maven validation, repair review, dependency targeting, and final proof."
-                meta={["Spring Boot 2.1 → 4.0", "Java · Maven", "Reviewed phase gates"]}
+                meta={["Spring Boot 2.7 → 4.0", "Java · Maven", "Reviewed phase gates"]}
                 href="/java/migrations/new"
                 action="Start Spring Boot migration"
                 icon={<JavaIcon />}

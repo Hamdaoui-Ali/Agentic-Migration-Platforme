@@ -48,8 +48,8 @@ export interface AngularBaselineModel {
 }
 
 export interface AngularLlmProvenance {
-  provider: "azure_openai";
-  deployment: "gpt-5-mini";
+  provider: "azure_foundry";
+  deployment: "gpt-5-mini" | "Llama-3.3-70B-Instruct";
   role: "phase_proposer" | "phase_reviewer";
   promptVersion: string;
   status: "WAITING" | "RUNNING" | "SUCCEEDED";
