@@ -41,11 +41,6 @@ export function LiveExecutionPanel({
     })),
   );
 
-  const elapsedSeconds = Math.max(
-    0,
-    Math.round(projection.elapsedMs / 100) / 10,
-  );
-
   return (
     <section
       className="overflow-hidden rounded-2xl border border-[#2b3342] bg-[#0d1118] text-white shadow-xl"
@@ -75,9 +70,6 @@ export function LiveExecutionPanel({
             </p>
             <p className="mt-1 text-lg font-semibold">
               {projection.progressPercent}%
-            </p>
-            <p className="mt-1 text-[11px] text-[#8f9bae]">
-              {elapsedSeconds.toFixed(1)}s elapsed
             </p>
           </div>
         </div>

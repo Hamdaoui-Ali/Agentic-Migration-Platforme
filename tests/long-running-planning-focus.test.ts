@@ -167,7 +167,6 @@ test("completed Angular Planning exposes route, first-stage, policies, reviewer,
 test("every Java live execution lasts at least 30 seconds and Java Planning lasts about 45 seconds", () => {
   const kinds = [
     "PREFLIGHT",
-    "CANCELLATION",
     "ANALYSIS_AGENT",
     "PLANNING_AGENT",
     "ASSESSMENT_AGENT",

@@ -120,30 +120,6 @@ function createJavaLiveExecutionRaw(
     };
   }
 
-  if (kind === "CANCELLATION") {
-    return {
-      id: id(kind, startedAtMs),
-      kind,
-      status: "RUNNING",
-      startedAtMs,
-      steps: [
-        {
-          id: "cancellation-check",
-          label: "Check cancellation state",
-          node: "orchestrator.cancellation_check",
-          detail: "Confirm no cancellation request is pending before agent execution.",
-          durationMs: 700,
-          kind: "SYSTEM",
-          logs: [
-            "No active cancellation request.",
-            "Execution lease remains valid.",
-            "Pipeline may continue.",
-          ],
-        },
-      ],
-    };
-  }
-
   if (kind === "ANALYSIS_AGENT") {
     return {
       id: id(kind, startedAtMs),

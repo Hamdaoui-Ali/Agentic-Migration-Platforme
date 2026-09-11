@@ -14,15 +14,13 @@ export function cancelJavaMigration(
     status: "CANCELLED",
     cancellationRequested: true,
     currentGate: null,
-    currentPhase: "CANCELLATION",
+    currentPhase: "CANCELLED",
     currentAction: "Migration cancelled; active work has been stopped",
     liveExecution: undefined,
     pipeline: job.pipeline.map((phase) =>
-      phase.id === "CANCELLATION"
-        ? { ...phase, status: "PASS" as const }
-        : phase.status === "RUNNING" || phase.status === "ACTION_REQUIRED"
-          ? { ...phase, status: "SKIPPED" as const }
-          : phase,
+      phase.status === "RUNNING" || phase.status === "ACTION_REQUIRED"
+        ? { ...phase, status: "SKIPPED" as const }
+        : phase,
     ),
     evidence: [
       ...job.evidence,

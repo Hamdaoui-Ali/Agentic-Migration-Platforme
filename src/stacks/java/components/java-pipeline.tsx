@@ -5,6 +5,19 @@ import type { JavaJobModel } from "../domain/run-types";
 import { JavaRouteBoard } from "./java-route-board";
 
 export function JavaPipeline({ job }: { job: JavaJobModel }) {
+  const completedStageNumbers = [
+    ...job.stageResults
+      .filter((result) => result.status === "PASS")
+      .map((result) => result.stage),
+    ...(job.finalReport.status === "GENERATED" ? [4] : []),
+  ];
+  const activeStatus =
+    job.currentPhase === "REPAIR_FAILURE" || job.currentGate === "repair_review"
+      ? "REPAIR"
+      : job.currentStage !== null && job.status !== "CANCELLED" && job.status !== "COMPLETED"
+        ? "RUNNING"
+        : null;
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
       <div className="space-y-6">
@@ -177,7 +190,13 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
             description="Included, skipped, and excluded route stages do not change when the pipeline advances."
           />
           <div className="mt-5">
-            <JavaRouteBoard route={job.route} compact />
+            <JavaRouteBoard
+              route={job.route}
+              compact
+              completedStages={completedStageNumbers}
+              activeStage={job.currentStage}
+              activeStatus={activeStatus}
+            />
           </div>
         </Panel>
 

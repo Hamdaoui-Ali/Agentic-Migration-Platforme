@@ -83,5 +83,5 @@ test("Java job starts with the first included route stage, not a fabricated phas
 
   assert.equal(job.currentStage, 2);
   assert.equal(job.currentPhase, "PREFLIGHT");
-  assert.equal(job.currentAction, "Run preflight and cancellation checks");
+  assert.equal(job.currentAction, "Run preflight checks");
 });

@@ -351,7 +351,7 @@ export function JavaCockpitPage() {
       >
         <p className="text-sm leading-6 text-[var(--mf-text-muted)]">
           Job {job.id} is currently in {job.currentPhase.replaceAll("_", " ")}.
-          Cancellation is recorded as an explicit pipeline event.
+          Cancellation is recorded in the execution evidence.
         </p>
       </Dialog>
     </div>

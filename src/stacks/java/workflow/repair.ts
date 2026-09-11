@@ -7,6 +7,7 @@ import type {
 } from "../domain/run-types.ts";
 
 const REPAIR_TEST_PATH = "src/test/java/com/acme/OrderServiceTest.java";
+const REPAIR_POM_PATH = "pom.xml";
 
 function renderJavaRepairDiff(): string {
   return [
@@ -18,6 +19,17 @@ function renderJavaRepairDiff(): string {
     '-    assertThat(result.getLegacyStatus()).isEqualTo("READY");',
     '+    assertThat(result.getStatus()).isEqualTo("READY");',
     "     assertThat(result.isValid()).isTrue();",
+    "",
+    `diff --git a/${REPAIR_POM_PATH} b/${REPAIR_POM_PATH}`,
+    `--- a/${REPAIR_POM_PATH}`,
+    `+++ b/${REPAIR_POM_PATH}`,
+    "@@ -18,5 +18,5 @@",
+    "     <dependency>",
+    "       <groupId>org.mockito</groupId>",
+    "       <artifactId>mockito-core</artifactId>",
+    "-      <version>4.8.1</version>",
+    "+      <version>5.18.0</version>",
+    "     </dependency>",
   ].join("\n");
 }
 
@@ -63,10 +75,10 @@ function buildAttempt(
 ): JavaRepairAttempt {
   const suffix =
     reason === "INITIAL"
-      ? "Fix the failing compatibility assertion without changing unrelated dependencies."
+      ? "Fix the failing compatibility assertion and align the Mockito test dependency for the Java 17 validation runtime."
       : reason === "REANALYZE"
-        ? "Reanalyzed failure evidence and narrowed the repair to the directly failing source surface."
-        : "Revised the reviewed source patch according to repair gate feedback.";
+        ? "Reanalyzed failure evidence and kept the bounded source and POM changes required by the Java 17 validation runtime."
+        : "Revised the reviewed source and POM patch according to repair gate feedback.";
 
   if (job.currentStage !== 1 && job.currentStage !== 2 && job.currentStage !== 3) {
     throw new Error("Java Stage 4 cannot own a normal repair attempt.");
@@ -79,10 +91,10 @@ function buildAttempt(
     status: "REVIEWED",
     failureKind: "BUILD_OR_TEST_FAILURE",
     diagnosis:
-      "Test validation failed after transformation; Maven build remains structurally valid.",
+      "Test validation failed after the Spring Boot 2.7 → 3.5 stage; Maven compilation passed, but the transformed test still calls the legacy status accessor and the Mockito dependency is not aligned with the Java 17 validation runtime.",
     proposerSummary: suffix,
     reviewerVerdict: "ACCEPT",
-    changedFiles: [REPAIR_TEST_PATH],
+    changedFiles: [REPAIR_TEST_PATH, REPAIR_POM_PATH],
     diff: renderJavaRepairDiff(),
     checksum: stableDisplayChecksum(
       job.id +

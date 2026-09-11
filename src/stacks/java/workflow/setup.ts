@@ -168,7 +168,7 @@ export function createJavaJob(
     status: "READY",
     currentStage: firstIncluded.stage,
     currentPhase: "PREFLIGHT",
-    currentAction: "Run preflight and cancellation checks",
+    currentAction: "Run preflight checks",
     createdAt: now,
   };
 }

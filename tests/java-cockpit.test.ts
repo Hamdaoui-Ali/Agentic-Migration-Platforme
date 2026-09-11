@@ -33,7 +33,6 @@ function reachAnalysisGate(policy: JavaContinuationPolicy = "MANUAL") {
   let model = job(policy);
   model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
-  model = advanceJavaPipeline(model);
   return model;
 }
 
@@ -74,7 +73,7 @@ test("Java exposes exactly five PhaseGate types and no assessment_review", () =>
 test("Java route stages and execution phases are separate dimensions", () => {
   const model = job();
   assert.equal(model.route.length, 4);
-  assert.equal(JAVA_PIPELINE_PHASES.length, 13);
+  assert.equal(JAVA_PIPELINE_PHASES.length, 12);
   assert.equal(model.pipeline[0]?.id, "PREFLIGHT");
   assert.equal(model.route[0]?.stage, 1);
 });

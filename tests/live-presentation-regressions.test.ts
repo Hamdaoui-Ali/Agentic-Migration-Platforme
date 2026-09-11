@@ -65,3 +65,30 @@ test("live execution graph keeps runtime metadata visible after a step passes", 
     /step\.status === "RUNNING"\s*&&\s*\(step\.provider \|\| step\.command\)/,
   );
 });
+
+test("shared live execution panel keeps progress without wall-clock elapsed copy", () => {
+  const source = readFileSync(
+    new URL(
+      "../src/components/shared/live-execution-panel.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(source, /projection\.progressPercent/);
+  assert.doesNotMatch(source, /elapsedSeconds|s elapsed/);
+});
+
+test("Java route board supports completed and active execution statuses", () => {
+  const source = readFileSync(
+    new URL(
+      "../src/stacks/java/components/java-route-board.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(source, /completedStages/);
+  assert.match(source, /"DONE"/);
+  assert.match(source, /"REPAIR"/);
+});

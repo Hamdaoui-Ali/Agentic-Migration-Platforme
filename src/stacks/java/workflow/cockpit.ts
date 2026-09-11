@@ -21,7 +21,6 @@ import {
 
 const PHASE_LABELS: Record<JavaPipelinePhaseId, string> = {
   PREFLIGHT: "Preflight",
-  CANCELLATION: "Cancellation",
   ANALYSIS_AGENT: "Analysis Agent",
   PLANNING_AGENT: "Planning Agent",
   ASSESSMENT_AGENT: "Assessment Agent",
@@ -286,18 +285,9 @@ export function advanceJavaPipeline(
     return {
       ...job,
       status: "RUNNING",
-      currentPhase: "CANCELLATION",
-      currentAction: "Check cancellation state before analysis",
-      pipeline: setPhase(job.pipeline, "PREFLIGHT", "CANCELLATION"),
-    };
-  }
-
-  if (job.currentPhase === "CANCELLATION") {
-    return {
-      ...job,
       currentPhase: "ANALYSIS_AGENT",
       currentAction: "Run Analysis Agent",
-      pipeline: setPhase(job.pipeline, "CANCELLATION", "ANALYSIS_AGENT"),
+      pipeline: setPhase(job.pipeline, "PREFLIGHT", "ANALYSIS_AGENT"),
     };
   }
 
@@ -727,7 +717,7 @@ function progressToNextJavaStage(
     currentStage: next.stage,
     currentGate: null,
     currentPhase: "PREFLIGHT",
-    currentAction: "Run preflight and cancellation checks for Java stage " + next.stage,
+    currentAction: "Run preflight checks for Java stage " + next.stage,
     pipeline: freshPipeline("PREFLIGHT"),
     evidence: [
       ...job.evidence,

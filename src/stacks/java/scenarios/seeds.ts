@@ -63,7 +63,7 @@ function baseJob(
 function runToAnalysisGate(job: JavaJobModel): JavaJobModel {
   let current = advanceJavaPipeline(job);
   current = advanceJavaPipeline(current);
-  return advanceJavaPipeline(current);
+  return current;
 }
 
 function runToTestValidation(job: JavaJobModel): JavaJobModel {

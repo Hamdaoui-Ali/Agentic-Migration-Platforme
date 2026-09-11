@@ -9,7 +9,6 @@ import { createJavaLiveExecution } from "./live-definitions.ts";
 
 const EXECUTABLE_PHASES = new Set<JavaLiveExecutionKind>([
   "PREFLIGHT",
-  "CANCELLATION",
   "ANALYSIS_AGENT",
   "PLANNING_AGENT",
   "ASSESSMENT_AGENT",
@@ -80,8 +79,6 @@ function executionAction(kind: JavaLiveExecutionKind): string {
   switch (kind) {
     case "PREFLIGHT":
       return "Preflight checks are running";
-    case "CANCELLATION":
-      return "Checking cancellation and execution lease";
     case "ANALYSIS_AGENT":
       return "Analysis Proposer and independent Reviewer are running";
     case "PLANNING_AGENT":

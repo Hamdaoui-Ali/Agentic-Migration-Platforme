@@ -7,6 +7,17 @@ import { JavaRouteBoard } from "./java-route-board";
 export function JavaOverview({ job }: { job: JavaJobModel }) {
   const included = job.route.filter((stage) => stage.disposition === "INCLUDED");
   const completedStages = job.stageResults.filter((result) => result.status === "PASS");
+  const completedStageNumbers = [
+    ...completedStages.map((result) => result.stage),
+    ...(job.finalReport.status === "GENERATED" ? [4] : []),
+  ];
+  const completedStageCount = completedStageNumbers.length;
+  const activeStatus =
+    job.currentPhase === "REPAIR_FAILURE" || job.currentGate === "repair_review"
+      ? "REPAIR"
+      : job.currentStage !== null && job.status !== "CANCELLED" && job.status !== "COMPLETED"
+        ? "RUNNING"
+        : null;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(340px,.75fr)]">
@@ -17,7 +28,13 @@ export function JavaOverview({ job }: { job: JavaJobModel }) {
           description="Route projection is independent from the execution phase pipeline and remains stable until an explicit source-profile override creates a new route authority."
         />
         <div className="mt-5">
-          <JavaRouteBoard route={job.route} compact />
+          <JavaRouteBoard
+            route={job.route}
+            compact
+            completedStages={completedStageNumbers}
+            activeStage={job.currentStage}
+            activeStatus={activeStatus}
+          />
         </div>
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           <div className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4">
@@ -26,7 +43,7 @@ export function JavaOverview({ job }: { job: JavaJobModel }) {
           </div>
           <div className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)]">Completed</p>
-            <p className="mt-2 text-xl font-semibold">{completedStages.length}</p>
+            <p className="mt-2 text-xl font-semibold">{completedStageCount}</p>
           </div>
           <div className="rounded-lg border border-[#cbd7ff] bg-[var(--mf-info-soft)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-info)]">Current stage</p>

@@ -37,7 +37,6 @@ function advanceReviewedStage(model: ReturnType<typeof job>) {
   let current = model;
   current = advanceJavaPipeline(current);
   current = advanceJavaPipeline(current);
-  current = advanceJavaPipeline(current);
   current = applyJavaGateDecision(current, "analysis_review", "CONTINUE");
   current = advanceJavaPipeline(current);
   current = applyJavaGateDecision(current, "planning_review", "CONTINUE");
@@ -54,7 +53,6 @@ function repairJob() {
   assert.equal(stage2.currentStage, 2);
 
   let current = stage2;
-  current = advanceJavaPipeline(current);
   current = advanceJavaPipeline(current);
   current = advanceJavaPipeline(current);
   current = applyJavaGateDecision(current, "analysis_review", "CONTINUE");
@@ -83,7 +81,7 @@ test("Java Stage 2 failed validation enters reviewed repair_review", () => {
   );
 });
 
-test("normal Java repair attempts expose a valid unified Git patch", () => {
+test("normal Java repair attempts expose a valid multi-file unified Git patch", () => {
   const attempt = repairJob().repair.attempts[0]!;
 
   assert.match(
@@ -92,6 +90,13 @@ test("normal Java repair attempts expose a valid unified Git patch", () => {
   );
   assert.match(attempt.diff, /^--- a\/src\/test\/java\/.+$/m);
   assert.match(attempt.diff, /^\+\+\+ b\/src\/test\/java\/.+$/m);
+  assert.match(attempt.diff, /^diff --git a\/pom\.xml b\/pom\.xml$/m);
+  assert.match(attempt.diff, /-      <version>4\.8\.1<\/version>/);
+  assert.match(attempt.diff, /\+      <version>5\.18\.0<\/version>/);
+  assert.deepEqual(attempt.changedFiles, [
+    "src/test/java/com/acme/OrderServiceTest.java",
+    "pom.xml",
+  ]);
   assert.match(attempt.diff, /^@@ -\d+,\d+ \+\d+,\d+ @@/m);
   assert.deepEqual(validateUnifiedDiff(attempt.diff), []);
 });
@@ -134,7 +139,6 @@ test("Gate Assistant preview is bound to gate checksum and revision", () => {
   let model = job();
   model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
-  model = advanceJavaPipeline(model);
 
   const preview = previewJavaGateAction(model, "CONTINUE");
   assert.equal(confirmJavaGatePreview(model, preview).actionChecksum, preview.actionChecksum);
@@ -164,7 +168,7 @@ test("Repair Assistant answers from current attempt and attempt limit", () => {
   assert.match(answerJavaRepairAssistant(model, "attempt limit"), /1 of 3/i);
 });
 
-test("cancellation stops active Java work through the Cancellation phase", () => {
+test("cancellation stops active Java work while retaining a cancellation audit record", () => {
   let model = job();
   model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
@@ -172,11 +176,11 @@ test("cancellation stops active Java work through the Cancellation phase", () =>
 
   assert.equal(cancelled.status, "CANCELLED");
   assert.equal(cancelled.currentGate, null);
-  assert.equal(cancelled.currentPhase, "CANCELLATION");
+  assert.equal(cancelled.currentPhase, "CANCELLED");
   assert.equal(cancelled.cancellationRequested, true);
   assert.equal(
-    cancelled.pipeline.find((phase) => phase.id === "CANCELLATION")?.status,
-    "PASS",
+    cancelled.pipeline.some((phase) => (phase.id as string) === "CANCELLATION"),
+    false,
   );
   assert.equal(cancelled.evidence.at(-1)?.category, "CANCELLATION");
 });
@@ -191,7 +195,6 @@ test("repair attempt limit is scoped to each Java route stage", () => {
   assert.equal(model.repair.attempts[0]?.stage, 2);
   assert.equal(model.repair.attempts[0]?.status, "VALIDATED");
 
-  model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
   model = applyJavaGateDecision(model, "analysis_review", "CONTINUE");
@@ -226,7 +229,6 @@ test("a repaired prior stage does not suppress the Stage 2 failure path", () => 
 
   model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
-  model = advanceJavaPipeline(model);
   model = applyJavaGateDecision(model, "analysis_review", "CONTINUE");
   model = advanceJavaPipeline(model);
   model = applyJavaGateDecision(model, "planning_review", "CONTINUE");
@@ -246,7 +248,6 @@ test("a repaired prior stage does not suppress the Stage 2 failure path", () => 
   assert.equal(model.repair.attempts[0]?.stage, 1);
   assert.equal(model.repair.attempts[0]?.status, "VALIDATED");
 
-  model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
   model = advanceJavaPipeline(model);
   model = applyJavaGateDecision(model, "analysis_review", "CONTINUE");

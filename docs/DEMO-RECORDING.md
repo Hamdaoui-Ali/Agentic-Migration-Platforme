@@ -21,7 +21,7 @@ Open the application with `mode=recording`:
 http://localhost:3000/?mode=recording
 ```
 
-The presenter mode uses 3× wall-clock playback while keeping the logical elapsed time and phase durations visible in the interface. An explicit speed from 1× to 6× can be selected with `?mode=recording&speed=4`.
+The presenter mode uses 3× wall-clock playback while preserving logical phase durations and progress behaviour in the interface. An explicit speed from 1× to 6× can be selected with `?mode=recording&speed=4`.
 
 ## Recommended recording routes
 

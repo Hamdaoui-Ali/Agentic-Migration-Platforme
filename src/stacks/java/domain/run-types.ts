@@ -43,7 +43,6 @@ export interface JavaPhaseGate {
 
 export const JAVA_PIPELINE_PHASES = [
   "PREFLIGHT",
-  "CANCELLATION",
   "ANALYSIS_AGENT",
   "PLANNING_AGENT",
   "ASSESSMENT_AGENT",
@@ -78,7 +77,6 @@ export interface JavaLlmProvenance {
 
 export type JavaLiveExecutionKind =
   | "PREFLIGHT"
-  | "CANCELLATION"
   | "ANALYSIS_AGENT"
   | "PLANNING_AGENT"
   | "ASSESSMENT_AGENT"
