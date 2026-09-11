@@ -77,6 +77,7 @@ export function AngularControlTowerPage() {
           advanceAngularLiveExecution(current, logicalNowMs),
           realNowMs,
           playbackSpeed,
+          current.liveExecution?.id,
         );
         if (next !== current) {
           putAngularRun(next);

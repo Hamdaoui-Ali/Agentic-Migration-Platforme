@@ -31,6 +31,7 @@ export function playbackNow(
 
 type ModelWithLiveExecution = {
   liveExecution?: {
+    id?: string;
     startedAtMs: number;
   };
 };
@@ -39,8 +40,15 @@ export function rebaseLiveExecutionStart<T extends ModelWithLiveExecution>(
   model: T,
   realNowMs: number,
   speed: number,
+  previousExecutionId?: string,
 ): T {
-  if (speed === 1 || !model.liveExecution) return model;
+  if (
+    speed === 1 ||
+    !model.liveExecution ||
+    model.liveExecution.id === previousExecutionId
+  ) {
+    return model;
+  }
 
   return {
     ...model,

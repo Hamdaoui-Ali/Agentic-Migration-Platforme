@@ -93,9 +93,11 @@ function completeCurrentGreenStage(job: JavaJobModel): JavaJobModel {
   return advanceJavaPipeline(runToTestValidation(job));
 }
 
-function seedJavaRepairScenario(): JavaJobModel {
+function seedJavaRepairScenario(
+  id = "java-repair-service",
+): JavaJobModel {
   const job = baseJob(
-    "java-repair-service",
+    id,
     "Payments Service",
     "AUTO_ON_GREEN",
     "SB_2_7_J11",
@@ -105,7 +107,7 @@ function seedJavaRepairScenario(): JavaJobModel {
 }
 
 function seedJavaTerminalScenario(): JavaJobModel {
-  let job = seedJavaRepairScenario();
+  let job = seedJavaRepairScenario("java-terminal-service");
   job = applyJavaRepairDecision(job, "CONTINUE");
   job = advanceJavaPipeline(job);
   job = completeCurrentGreenStage(job);

@@ -21,6 +21,7 @@ test("Java terminal report scenario reseeds deterministically", () => {
   const second = seedJavaJob("java-terminal-service");
 
   assert.deepEqual(second, first);
+  assert.equal(first.id, "java-terminal-service");
   assert.equal(first.status, "COMPLETED");
   assert.equal(first.currentStage, 4);
   assert.equal(first.finalReport.status, "GENERATED");

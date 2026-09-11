@@ -14,5 +14,6 @@ test("browser scenario stores use stack-specific schema keys", () => {
 
   assert.match(angular, /migration-factory:angular:v4/);
   assert.doesNotMatch(angular, /migration-factory:angular:v3/);
-  assert.match(java, /migration-factory:java:v3/);
+  assert.match(java, /migration-factory:java:v4/);
+  assert.doesNotMatch(java, /migration-factory:java:v3/);
 });

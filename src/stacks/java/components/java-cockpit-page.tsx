@@ -99,6 +99,7 @@ export function JavaCockpitPage() {
           advanceJavaLiveExecution(current, logicalNowMs),
           realNowMs,
           playbackSpeed,
+          current.liveExecution?.id,
         );
         if (next !== current) {
           putJavaJob(next);
