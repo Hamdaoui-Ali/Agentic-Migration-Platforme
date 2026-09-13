@@ -71,7 +71,7 @@ export function AngularSetupPage() {
       <ProductHeader breadcrumb="Angular / New Migration" />
       <main className="mf-container py-8 lg:py-10">
         <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#b51f32]">
+          <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--mf-primary)]">
             Angular Migration
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">New migration</h1>
@@ -193,13 +193,13 @@ export function AngularSetupPage() {
               </dl>
 
               {preview.warnings.length > 0 ? (
-                <div className="mt-4 rounded-lg border border-[#f1d69d] bg-[var(--mf-warning-soft)] p-3 text-xs leading-5 text-[var(--mf-warning)]">
+                <div className="mt-4 rounded-lg border border-[var(--mf-warning)]/35 bg-[var(--mf-warning-soft)] p-3 text-xs leading-5 text-[var(--mf-warning)]">
                   {preview.warnings[0]}
                 </div>
               ) : null}
 
               {error ? (
-                <div role="alert" className="mt-4 rounded-lg border border-[#efc1c1] bg-[var(--mf-danger-soft)] p-3 text-xs leading-5 text-[var(--mf-danger)]">
+                <div role="alert" className="mt-4 rounded-lg border border-[var(--mf-danger)]/35 bg-[var(--mf-danger-soft)] p-3 text-xs leading-5 text-[var(--mf-danger)]">
                   {error}
                 </div>
               ) : null}
