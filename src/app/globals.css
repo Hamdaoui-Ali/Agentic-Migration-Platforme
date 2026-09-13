@@ -110,6 +110,15 @@ a {
   color: var(--mf-text);
 }
 
+.mf-launch-summary {
+  border-left: 2px solid var(--mf-primary);
+  padding-left: 14px;
+}
+
+.mf-product-mark {
+  color: var(--mf-page);
+}
+
 .mf-container {
   width: min(1440px, calc(100% - 48px));
   margin: 0 auto;
