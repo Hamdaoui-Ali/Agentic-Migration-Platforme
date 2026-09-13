@@ -19,7 +19,7 @@ export function AngularDiagnosticsWorkspace({
   onRestart: () => void;
 }) {
   const sealed = run.route.filter((stage) => stage.status === "SEALED").at(-1);
-  const active = run.stageExecution && run.stageExecution.status !== "SEALED";
+  const active = run.state !== "CANCELLED" && run.stageExecution && run.stageExecution.status !== "SEALED";
   const lastDelivery = run.operations.partialDeliveries.at(-1);
 
   return (

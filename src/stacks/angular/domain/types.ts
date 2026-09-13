@@ -9,7 +9,7 @@ export interface AngularRouteStep {
   id: string;
   source: AngularMajor;
   target: AngularMajor;
-  status: "PENDING" | "RUNNING" | "SEALED" | "ACTION_REQUIRED";
+  status: "PENDING" | "RUNNING" | "SEALED" | "ACTION_REQUIRED" | "CANCELLED";
 }
 
 export type AngularPreflightStatus = "PASSED" | "PASSED_WITH_WARNINGS" | "BLOCKED" | "EXPIRED" | "STALE";

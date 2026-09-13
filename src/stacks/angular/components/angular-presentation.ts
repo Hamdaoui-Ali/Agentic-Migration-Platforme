@@ -12,7 +12,7 @@ import type {
 function evidenceKind(item: AngularRunEvidence): ObservatoryEntry["kind"] {
   if (item.category === "COMMAND") return "command";
   if (item.category === "DECISION" || item.category === "REPAIR") return "review";
-  if (item.category === "SEAL") return "system";
+  if (item.category === "SEAL" || item.category === "CANCELLATION") return "system";
   return "evidence";
 }
 

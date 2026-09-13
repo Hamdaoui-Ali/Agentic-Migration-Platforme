@@ -415,6 +415,12 @@ a {
   color: var(--mf-warning);
 }
 
+.mf-journey-node.status-cancelled .mf-journey-icon {
+  border-color: var(--mf-danger);
+  background: var(--mf-danger-soft);
+  color: var(--mf-danger);
+}
+
 .mf-journey-line {
   height: 1px;
   min-width: 16px;

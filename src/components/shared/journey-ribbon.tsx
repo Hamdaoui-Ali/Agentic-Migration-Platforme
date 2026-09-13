@@ -1,4 +1,4 @@
-import { Check, Circle, CircleAlert, CircleDot, Minus } from "lucide-react";
+import { Check, Circle, CircleAlert, CircleDot, Minus, XCircle } from "lucide-react";
 
 import type { JourneyNode } from "./presentation-types";
 
@@ -6,6 +6,7 @@ function iconFor(status: JourneyNode["status"]) {
   if (status === "SEALED" || status === "COMPLETED") return Check;
   if (status === "ACTION_REQUIRED") return CircleAlert;
   if (status === "RUNNING") return CircleDot;
+  if (status === "CANCELLED") return XCircle;
   if (status === "SKIPPED" || status === "EXCLUDED") return Minus;
   return Circle;
 }

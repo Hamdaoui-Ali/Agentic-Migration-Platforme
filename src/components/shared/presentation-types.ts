@@ -22,7 +22,8 @@ export type JourneyNode = {
     | "SKIPPED"
     | "EXCLUDED"
     | "PENDING"
-    | "COMPLETED";
+    | "COMPLETED"
+    | "CANCELLED";
   detail?: string;
 };
 

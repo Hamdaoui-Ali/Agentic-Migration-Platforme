@@ -19,7 +19,10 @@ export function AngularCurrentAction({ run }: { run: AngularRunModel }) {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#8f9bae]">Current execution</span>
-            <StatusBadge label={run.state} tone={run.state === "COMPLETED" ? "success" : "info"} />
+            <StatusBadge
+              label={run.state}
+              tone={run.state === "CANCELLED" ? "danger" : run.state === "COMPLETED" ? "success" : "info"}
+            />
           </div>
           <h2 className="mt-4 max-w-3xl text-2xl font-semibold tracking-[-0.035em]">
             {run.currentAction}
@@ -31,6 +34,8 @@ export function AngularCurrentAction({ run }: { run: AngularRunModel }) {
                 ? "Execution is active. The next governed review boundary remains unavailable until the running evidence package is finalized."
                 : run.phase === "STAGE_PREPARATION"
                   ? "Pre-transform governance is complete. Stage runtime resolution is the next authority boundary."
+                  : run.state === "CANCELLED"
+                    ? "The migration was cancelled by operator request. Recorded evidence remains available."
                   : run.state === "COMPLETED"
                     ? "The requested Angular target has been achieved."
                     : "The workflow is progressing between governed review boundaries."}

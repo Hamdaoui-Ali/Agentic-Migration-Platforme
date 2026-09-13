@@ -202,7 +202,7 @@ export function restartAngularActiveStage(
   now = "2026-08-31T20:23:00+01:00",
 ): AngularRunModel {
   const active = run.stageExecution;
-  if (!active || active.status === "SEALED") {
+  if (run.state === "CANCELLED" || !active || active.status === "SEALED") {
     throw new Error("There is no active unsealed Angular stage to restart.");
   }
 

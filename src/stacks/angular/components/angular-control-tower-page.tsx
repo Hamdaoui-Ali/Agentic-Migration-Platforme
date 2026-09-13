@@ -21,6 +21,8 @@ import {
   rebaseLiveExecutionStart,
   usePlaybackSpeed,
 } from "@/lib/presenter-mode";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Tabs } from "@/components/ui/tabs";
 import type {
@@ -36,6 +38,7 @@ import {
 import { getAllowedPreTransformDecisions, applyAngularGateDecision } from "../workflow/run";
 import { advanceAngularLiveExecution } from "../workflow/live";
 import { applyAngularStageGateDecision, getAllowedStageDecisions } from "../workflow/proven";
+import { cancelAngularMigration } from "../workflow/cancellation";
 import {
   createAngularPartialDelivery,
   restartAngularActiveStage,
@@ -69,6 +72,7 @@ export function AngularControlTowerPage() {
   const [run, setRun] = useState<AngularRunModel>(() => getAngularRun(runId));
   const [active, setActive] = useState("overview");
   const [error, setError] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
   const latestUpdateMountedRef = useRef(false);
@@ -258,6 +262,20 @@ export function AngularControlTowerPage() {
     }
   }
 
+  function confirmCancellation() {
+    try {
+      setError(null);
+      const next = cancelAngularMigration(run);
+      putAngularRun(next);
+      setRun(next);
+      setCancelOpen(false);
+      setActive("pipeline");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to cancel Angular migration.");
+      setCancelOpen(false);
+    }
+  }
+
   function applyRecovery(action: "delivery" | "rollback" | "resume" | "restart") {
     try {
       setError(null);
@@ -277,47 +295,64 @@ export function AngularControlTowerPage() {
     }
   }
 
+  const canCancel = run.state !== "CANCELLED" && run.state !== "COMPLETED";
+
   const shellActions: ShellAction[] = (() => {
-    if (run.liveExecution || !run.currentGate) return [];
+    const cancellationAction: ShellAction[] = canCancel
+      ? [{
+          id: "angular-cancel",
+          label: "Cancel migration",
+          variant: "danger" as const,
+          onSelect: () => setCancelOpen(true),
+        }]
+      : [];
+
+    if (run.liveExecution || !run.currentGate) return cancellationAction;
 
     if (["G07", "G09", "G10", "G11", "G12"].includes(run.currentGate)) {
       const gateId = run.currentGate as AngularStageGateId;
       const gate = run.stageExecution?.gates[gateId];
-      if (!gate || gate.status !== "PENDING") return [];
-      return getAllowedStageDecisions(gateId).map((decision) => ({
-        id: `stage-${gateId}-${decision.toLowerCase()}`,
-        label:
-          decision === "REQUEST_MODIFICATION"
-            ? "Request modification"
-            : decision === "APPROVE"
-              ? "Approve gate"
-              : "Reject gate",
-        variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
-        onSelect: () => handleStageDecision(gateId, decision, ""),
-      }));
+      if (!gate || gate.status !== "PENDING") return cancellationAction;
+      return [
+        ...getAllowedStageDecisions(gateId).map((decision): ShellAction => ({
+          id: `stage-${gateId}-${decision.toLowerCase()}`,
+          label:
+            decision === "REQUEST_MODIFICATION"
+              ? "Request modification"
+              : decision === "APPROVE"
+                ? "Approve gate"
+                : "Reject gate",
+          variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
+          onSelect: () => handleStageDecision(gateId, decision, ""),
+        })),
+        ...cancellationAction,
+      ];
     }
 
     if (["G02", "G03", "G04", "G05", "G06"].includes(run.currentGate)) {
       const gateId = run.currentGate as AngularPreTransformGateId;
       const gate = run.gates[gateId];
-      if (!gate || gate.status !== "PENDING") return [];
-      return getAllowedPreTransformDecisions(gateId).map((decision) => ({
-        id: `pre-${gateId}-${decision.toLowerCase()}`,
-        label:
-          decision === "REQUEST_MODIFICATION"
-            ? "Request modification"
-            : decision === "APPROVE_WITH_COMMENT"
-              ? "Approve with comment"
-              : decision === "APPROVE"
-                ? "Approve gate"
-                : "Reject gate",
-        variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
-        disabled: decision === "APPROVE_WITH_COMMENT",
-        onSelect: () => handleDecision(gateId, decision, ""),
-      }));
+      if (!gate || gate.status !== "PENDING") return cancellationAction;
+      return [
+        ...getAllowedPreTransformDecisions(gateId).map((decision): ShellAction => ({
+          id: `pre-${gateId}-${decision.toLowerCase()}`,
+          label:
+            decision === "REQUEST_MODIFICATION"
+              ? "Request modification"
+              : decision === "APPROVE_WITH_COMMENT"
+                ? "Approve with comment"
+                : decision === "APPROVE"
+                  ? "Approve gate"
+                  : "Reject gate",
+          variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
+          disabled: decision === "APPROVE_WITH_COMMENT",
+          onSelect: () => handleDecision(gateId, decision, ""),
+        })),
+        ...cancellationAction,
+      ];
     }
 
-    return [];
+    return cancellationAction;
   })();
 
   const navigation = angularNav(active, run).map((item) => ({
@@ -333,7 +368,8 @@ export function AngularControlTowerPage() {
   }));
 
   return (
-    <AppShell
+    <>
+      <AppShell
       stack="angular"
       breadcrumb="Angular / Migration Workspace"
       status={<StatusBadge label={run.state} />}
@@ -357,6 +393,11 @@ export function AngularControlTowerPage() {
               preference={automationPreference}
               onChange={(next) => writeAutomationPreference("angular", next)}
             />
+            {canCancel ? (
+              <Button variant="danger" size="sm" onClick={() => setCancelOpen(true)}>
+                Cancel migration
+              </Button>
+            ) : null}
             <StatusBadge label={isAutomationEnabled(automationPreference) ? "AUTO MODE" : "MANUAL MODE"} />
             {run.liveExecution
               ? "Execution active · live events synchronized"
@@ -429,6 +470,29 @@ export function AngularControlTowerPage() {
         </div>
 
       </div>
-    </AppShell>
+      </AppShell>
+
+      <Dialog
+        open={cancelOpen}
+        title="Cancel migration?"
+        description="Cancellation stops the active Angular workflow and clears the current governed action. Recorded evidence remains available."
+        onClose={() => setCancelOpen(false)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setCancelOpen(false)}>
+              Keep running
+            </Button>
+            <Button variant="danger" onClick={confirmCancellation}>
+              Confirm cancellation
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm leading-6 text-[var(--mf-text-muted)]">
+          Run {run.id} is currently in {run.phase.replaceAll("_", " ")}.
+          Cancellation is recorded in the execution evidence.
+        </p>
+      </Dialog>
+    </>
   );
 }

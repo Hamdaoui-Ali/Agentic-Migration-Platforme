@@ -404,6 +404,11 @@ export function JavaCockpitPage() {
               preference={automationPreference}
               onChange={(next) => writeAutomationPreference("java", next)}
             />
+            {canCancel ? (
+              <Button variant="danger" size="sm" onClick={() => setCancelOpen(true)}>
+                Cancel migration
+              </Button>
+            ) : null}
             <StatusBadge label={isAutomationEnabled(automationPreference) ? "AUTO MODE" : "MANUAL MODE"} />
             <span className="hidden font-mono text-[11px] text-[var(--mf-text-soft)] md:inline">
               {job.id}

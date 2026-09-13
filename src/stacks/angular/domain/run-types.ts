@@ -278,7 +278,7 @@ export interface AngularStageExecution {
   stageId: string;
   source: AngularMajor;
   target: AngularMajor;
-  status: "WAITING_G07" | "EXECUTING" | "ACTION_REQUIRED" | "WAITING_COMPLETION" | "SEALED";
+  status: "WAITING_G07" | "EXECUTING" | "ACTION_REQUIRED" | "WAITING_COMPLETION" | "SEALED" | "CANCELLED";
   runtime: {
     profile: string;
     resolution: "PASS";
@@ -307,7 +307,8 @@ export interface AngularRunEvidence {
     | "REPAIR"
     | "VALIDATION"
     | "SEAL"
-    | "COMMAND";
+    | "COMMAND"
+    | "CANCELLATION";
   title: string;
   summary: string;
   timestamp: string;
@@ -324,7 +325,8 @@ export type AngularRunPhase =
   | "TRANSFORMATION"
   | "REPAIR"
   | "COMPLETE"
-  | "BLOCKED";
+  | "BLOCKED"
+  | "CANCELLED";
 
 
 export interface AngularCommandRecord {

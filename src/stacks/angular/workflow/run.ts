@@ -236,12 +236,18 @@ const initialFeasibility: AngularFeasibilityModel = {
 };
 
 export function createAngularRunModel(seed: AngularRunSeed): AngularRunModel {
+  const isCompleted = seed.state === "COMPLETED";
+  const isCancelled = seed.state === "CANCELLED";
   return {
     ...seed,
-    state: seed.state === "COMPLETED" ? "COMPLETED" : "RUNNING",
-    phase: seed.state === "COMPLETED" ? "COMPLETE" : "SOURCE_SNAPSHOT",
-    currentGate: seed.state === "COMPLETED" ? null : "G02",
-    currentAction: seed.state === "COMPLETED" ? "Requested target achieved" : "Review immutable source snapshot",
+    state: isCompleted ? "COMPLETED" : isCancelled ? "CANCELLED" : "RUNNING",
+    phase: isCompleted ? "COMPLETE" : isCancelled ? "CANCELLED" : "SOURCE_SNAPSHOT",
+    currentGate: isCompleted || isCancelled ? null : "G02",
+    currentAction: isCompleted
+      ? "Requested target achieved"
+      : isCancelled
+        ? "Migration cancelled by operator request"
+        : "Review immutable source snapshot",
     gates: {
       G02: gate(seed, "G02", seed.state === "COMPLETED" ? "APPROVED" : "PENDING"),
       G03: gate(seed, "G03", seed.state === "COMPLETED" ? "APPROVED" : "LOCKED"),

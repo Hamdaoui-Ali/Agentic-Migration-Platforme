@@ -27,7 +27,13 @@ export function AngularOverview({ run }: { run: AngularRunModel }) {
           <div className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mf-text-soft)]">Next</p>
             <p className="mt-2 text-sm font-semibold">
-              {nextGate ? `${nextGate.id} · ${nextGate.label}` : run.phase === "STAGE_PREPARATION" ? "Stage runtime certification" : "Requested target proof"}
+              {nextGate
+                ? `${nextGate.id} · ${nextGate.label}`
+                : run.state === "CANCELLED"
+                  ? "Migration cancelled"
+                  : run.phase === "STAGE_PREPARATION"
+                    ? "Stage runtime certification"
+                    : "Requested target proof"}
             </p>
           </div>
         </div>
