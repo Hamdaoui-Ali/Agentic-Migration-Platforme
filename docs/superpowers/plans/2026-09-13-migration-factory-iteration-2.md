@@ -41,12 +41,12 @@
 - `src/lib/diagnostics.ts` exports `DiagnosticRunStatus`, `DiagnosticRunState`, `createDiagnosticState`, `advanceDiagnosticState`, and `DIAGNOSTIC_DURATION_MS` (5_000).
 - `EnvironmentDiagnostics` accepts `{ checks, state, onRun }` where checks are generic `{ id, label, value, status }` records and state controls the revealed count; it only renders supplied values and callbacks.
 
-- [ ] **Step 1: Write the failing tests** for deterministic sequential reveal, five-second duration constant, blocked check color, and Angular setup’s idle state/button label.
-- [ ] **Step 2: Run `npm test tests/environment-diagnostics.test.ts tests/angular-setup.test.ts` and confirm the new assertions fail because the helper/component contract does not exist.**
-- [ ] **Step 3: Implement the pure diagnostics state helper and presentation-only renderer.** Use a five-second run split evenly across the supplied check count; the helper must clamp revealed entries and finish with `COMPLETE` only after the final check.
-- [ ] **Step 4: Replace Angular’s static environment list with the renderer.** Keep the route, project, and source-review content visible; start in `IDLE`, reveal the existing `preview.environment` values one at a time, and block “Review production readiness” until `COMPLETE` unless the existing preflight is already blocked.
-- [ ] **Step 5: Run focused tests, then `npm run lint`, `npm run typecheck`, and `npm run build`.**
-- [ ] **Step 6: Update the source-reference matrix with the Angular setup diagnostic projection and commit:** `feat: add staged Angular environment diagnostics`.
+- [x] **Step 1: Write the failing tests** for deterministic sequential reveal, five-second duration constant, blocked check color, and Angular setup’s idle state/button label.
+- [x] **Step 2: Run `npm test tests/environment-diagnostics.test.ts tests/angular-setup.test.ts` and confirm the new assertions fail because the helper/component contract does not exist.**
+- [x] **Step 3: Implement the pure diagnostics state helper and presentation-only renderer.** Use a five-second run split evenly across the supplied check count; the helper must clamp revealed entries and finish with `COMPLETE` only after the final check.
+- [x] **Step 4: Replace Angular’s static environment list with the renderer.** Keep the route, project, and source-review content visible; start in `IDLE`, reveal the existing `preview.environment` values one at a time, and block “Review production readiness” until `COMPLETE` unless the existing preflight is already blocked.
+- [x] **Step 5: Run focused tests, then `npm run lint`, `npm run typecheck`, and `npm run build`.**
+- [x] **Step 6: Update the source-reference matrix with the Angular setup diagnostic projection and commit:** `feat: add staged Angular environment diagnostics`.
 
 ### Task 2: Java setup diagnostics and automation preference control
 
@@ -60,12 +60,12 @@
 - Reuse `EnvironmentDiagnostics` and `DiagnosticRunState` from Task 1 with Java’s `configuration.environment` values.
 - Add `AutomationPreference` (`MANUAL` | `AUTO_APPROVE_ELIGIBLE`) and `read/writeAutomationPreference(stack)` in `src/lib/automation.ts` for a versioned local-storage key.
 
-- [ ] **Step 1: Write failing tests** for Java idle diagnostics, five-second run state wiring, and versioned automation preference serialization.
-- [ ] **Step 2: Run `npm test tests/java-setup.test.ts` and verify the new tests fail.**
-- [ ] **Step 3: Implement the preference helper with safe browser guards and no domain-model mutation.** Invalid or absent storage values must resolve to `MANUAL`.
-- [ ] **Step 4: Add the Java “Run environment diagnosis” interaction.** Render Java 11/17/21, Maven, AI provider, and Azure integration checks sequentially; the create button remains disabled until diagnostics complete or configuration is blocked.
-- [ ] **Step 5: Add a clearly scoped “Automation preference” control with Manual approvals selected by default and Auto-approve eligible gates as the opt-in choice.** Explain that only decisions already allowed by Java’s own PhaseGate set may be progressed automatically.
-- [ ] **Step 6: Run focused tests, lint, typecheck, and build; update the source-reference matrix and commit:** `feat: add Java preflight diagnostics and automation preference`.
+- [x] **Step 1: Write failing tests** for Java idle diagnostics, five-second run state wiring, and versioned automation preference serialization.
+- [x] **Step 2: Run `npm test tests/java-setup.test.ts` and verify the new tests fail.**
+- [x] **Step 3: Implement the preference helper with safe browser guards and no domain-model mutation.** Invalid or absent storage values must resolve to `MANUAL`.
+- [x] **Step 4: Add the Java “Run environment diagnosis” interaction.** Render Java 11/17/21, Maven, AI provider, and Azure integration checks sequentially; the create button remains disabled until diagnostics complete or configuration is blocked.
+- [x] **Step 5: Add a clearly scoped “Automation preference” control with Manual approvals selected by default and Auto-approve eligible gates as the opt-in choice.** Explain that only decisions already allowed by Java’s own PhaseGate set may be progressed automatically.
+- [x] **Step 6: Run focused tests, lint, typecheck, and build; update the source-reference matrix and commit:** `feat: add Java preflight diagnostics and automation preference`.
 
 ### Task 3: Stack-owned automation runner for eligible gates
 
@@ -79,12 +79,12 @@
 - `automation.ts` exports `isAutomationEnabled(stack)` and the versioned preference helpers; no shared component reads gates.
 - Each control page owns a guarded effect/ref that invokes its existing `handleDecision`/`decide` callback only when the current gate is pending and its allowed decision set contains the stack’s safe progression decision.
 
-- [ ] **Step 1: Write failing tests** proving manual preference leaves gates pending, Angular auto mode uses only an allowed stage/pre-transform approval, Java auto mode uses only `CONTINUE`/`APPROVE` when available, and rejected/override decisions are never fabricated.
-- [ ] **Step 2: Run `npm test tests/presentation-automation.test.ts` and verify failure.**
-- [ ] **Step 3: Implement guarded automation in each stack owner.** Read the persisted preference after hydration, debounce duplicate calls with a ref, stop at human boundaries with no allowed safe action, and persist every resulting scenario state through the existing store functions.
-- [ ] **Step 4: Surface the selected preference in the workspace header/current-action context without changing the shared shell’s transition logic.**
-- [ ] **Step 5: Run focused tests, lint, typecheck, and build.**
-- [ ] **Step 6: Update the source-reference matrix and commit:** `feat: progress eligible gates with explicit automation mode`.
+- [x] **Step 1: Write failing tests** proving manual preference leaves gates pending, Angular auto mode uses only an allowed stage/pre-transform approval, Java auto mode uses only `CONTINUE`/`APPROVE` when available, and rejected/override decisions are never fabricated.
+- [x] **Step 2: Run `npm test tests/presentation-automation.test.ts` and verify failure.**
+- [x] **Step 3: Implement guarded automation in each stack owner.** Read the persisted preference after hydration, debounce duplicate calls with a ref, stop at human boundaries with no allowed safe action, and persist every resulting scenario state through the existing store functions.
+- [x] **Step 4: Surface the selected preference in the workspace header/current-action context without changing the shared shell’s transition logic.**
+- [x] **Step 5: Run focused tests, lint, typecheck, and build.**
+- [x] **Step 6: Update the source-reference matrix and commit:** `feat: progress eligible gates with explicit automation mode`.
 
 ### Task 4: Governed diff correction composer for Angular and Java
 
@@ -102,12 +102,12 @@
 - Angular owner maps “Accept and apply” to the current allowed G10 `APPROVE`, “Request modification” to `REQUEST_MODIFICATION`, and typed correction submission to `REQUEST_MODIFICATION` with the entered correction as comment.
 - Java owner maps “Accept and apply” to `repair_review` `CONTINUE`, “Request modification” and typed correction to `REVISE`, preserving attempt history.
 
-- [ ] **Step 1: Write failing tests** for action labels, disabled states outside the active repair boundary, and stack-specific callback mapping.
-- [ ] **Step 2: Run `npm test tests/repair-correction-actions.test.ts` and verify failure.**
-- [ ] **Step 3: Implement the shared composer with an accessible textarea, explicit action labels, and no implied state transitions.**
-- [ ] **Step 4: Wire Angular’s active reviewed attempt to the composer and pass the existing stage-decision callback from the control tower.** Do not mutate the diff or evidence in the component.
-- [ ] **Step 5: Wire Java’s active current-stage repair attempt to the composer and pass the existing `decide` callback from the cockpit.** Keep Stage 4 target-version/POM repair on its existing terminal-special path; do not create a `repair_review` gate there.
-- [ ] **Step 6: Run focused tests, lint, typecheck, and build; update the source-reference matrix and commit:** `feat: add governed diff correction actions`.
+- [x] **Step 1: Write failing tests** for action labels, disabled states outside the active repair boundary, and stack-specific callback mapping.
+- [x] **Step 2: Run `npm test tests/repair-correction-actions.test.ts` and verify failure.**
+- [x] **Step 3: Implement the shared composer with an accessible textarea, explicit action labels, and no implied state transitions.**
+- [x] **Step 4: Wire Angular’s active reviewed attempt to the composer and pass the existing stage-decision callback from the control tower.** Do not mutate the diff or evidence in the component.
+- [x] **Step 5: Wire Java’s active current-stage repair attempt to the composer and pass the existing `decide` callback from the cockpit.** Keep Stage 4 target-version/POM repair on its existing terminal-special path; do not create a `repair_review` gate there.
+- [x] **Step 6: Run focused tests, lint, typecheck, and build; update the source-reference matrix and commit:** `feat: add governed diff correction actions`.
 
 ### Task 5: Persistent migration assistant FAB
 
@@ -120,12 +120,12 @@
 **Interfaces:**
 - `AssistantFab` is a client component mounted once inside `ThemeProvider`; it accepts no workflow state, derives a short context label from `usePathname`, and exposes `aria-label="Open migration assistant"`.
 
-- [ ] **Step 1: Write failing tests** for global mount, collapsed FAB label, open panel, input submission, and route-context copy.
-- [ ] **Step 2: Run `npm test tests/assistant-fab.test.ts` and verify failure.**
-- [ ] **Step 3: Implement the fixed bottom-right assistant button and compact dialog/panel.** Submitted messages append locally and receive a transparent contextual response about route, evidence, logs, or gates; no assistant action changes workflow state.
-- [ ] **Step 4: Add responsive CSS so the FAB clears sticky actions/console surfaces on mobile, respects reduced motion, and remains keyboard reachable.**
-- [ ] **Step 5: Run focused tests, lint, typecheck, and build.**
-- [ ] **Step 6: Update the source-reference matrix and commit:** `feat: add persistent migration assistant surface`.
+- [x] **Step 1: Write failing tests** for global mount, collapsed FAB label, open panel, input submission, and route-context copy.
+- [x] **Step 2: Run `npm test tests/assistant-fab.test.ts` and verify failure.**
+- [x] **Step 3: Implement the fixed bottom-right assistant button and compact dialog/panel.** Submitted messages append locally and receive a transparent contextual response about route, evidence, logs, or gates; no assistant action changes workflow state.
+- [x] **Step 4: Add responsive CSS so the FAB clears sticky actions/console surfaces on mobile, respects reduced motion, and remains keyboard reachable.**
+- [x] **Step 5: Run focused tests, lint, typecheck, and build.**
+- [x] **Step 6: Update the source-reference matrix and commit:** `feat: add persistent migration assistant surface`.
 
 ### Task 6: Cancellation projection cleanup and final hardening
 
@@ -142,11 +142,11 @@
 - Cancellation remains exposed as one immediate Java shell action that calls `cancelJavaMigration`; no journey/phase/diagnostic entry named Cancellation is introduced.
 - Existing cancellation audit evidence remains append-only and visible in evidence/observatory surfaces.
 
-- [ ] **Step 1: Write failing tests** proving cancellation is absent from pipeline/journey/check projections while the immediate action and audit evidence remain available.
-- [ ] **Step 2: Run `npm test tests/cancellation-projection.test.ts` and verify failure.**
-- [ ] **Step 3: Remove any cancellation-as-check copy discovered in the presentation projections; keep the confirmed action dialog and Java-owned cancellation state transition.**
-- [ ] **Step 4: Run the complete test suite, lint, typecheck, and production build.**
-- [ ] **Step 5: Update the source-reference matrix and commit:** `fix: keep cancellation as an immediate action only`.
+- [x] **Step 1: Write failing tests** proving cancellation is absent from pipeline/journey/check projections while the immediate action and audit evidence remain available.
+- [x] **Step 2: Run `npm test tests/cancellation-projection.test.ts` and verify failure.**
+- [x] **Step 3: Remove any cancellation-as-check copy discovered in the presentation projections; keep the confirmed action dialog and Java-owned cancellation state transition.**
+- [x] **Step 4: Run the complete test suite, lint, typecheck, and production build.**
+- [x] **Step 5: Update the source-reference matrix and commit:** `fix: keep cancellation as an immediate action only`.
 
 ### Task 7: Rendered QA and integration handoff
 
@@ -154,9 +154,8 @@
 - Create: `docs/superpowers/reports/2026-09-13-migration-factory-iteration-2-qa.md`
 - Modify: `docs/architecture/source-reference-matrix.md`
 
-- [ ] **Step 1: Run `npm run check` on the feature worktree and record test count, lint, typecheck, and build output.**
-- [ ] **Step 2: Start the production app, verify Angular setup → run diagnosis → sequential green/red rows → readiness review, Java setup → diagnosis → automation preference, and at least one diff action path.**
-- [ ] **Step 3: Capture desktop and mobile screenshots outside the repository; inspect the accepted visual reference and latest screenshot with `view_image`, recording at least five comparison points.**
-- [ ] **Step 4: Record Browser plugin absence and the Playwright fallback reason in the QA report; include page identity, no-overlay, console, screenshot, and interaction evidence.**
-- [ ] **Step 5: Commit the QA report:** `docs: record iteration two rendered QA`.
-
+- [x] **Step 1: Run `npm run check` on the feature worktree and record test count, lint, typecheck, and build output.**
+- [x] **Step 2: Start the production app, verify Angular setup → run diagnosis → sequential green/red rows → readiness review, Java setup → diagnosis → automation preference, and at least one diff action path.**
+- [x] **Step 3: Capture desktop and mobile screenshots outside the repository; inspect the accepted visual reference and latest screenshot with `view_image`, recording at least five comparison points.**
+- [x] **Step 4: Record Browser plugin absence and the Playwright fallback reason in the QA report; include page identity, no-overlay, console, screenshot, and interaction evidence.**
+- [x] **Step 5: Commit the QA report:** `docs: record iteration two rendered QA`.
