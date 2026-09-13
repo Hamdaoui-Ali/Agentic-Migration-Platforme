@@ -16,6 +16,10 @@ import {
   createDiagnosticState,
   type DiagnosticRunState,
 } from "@/lib/diagnostics";
+import {
+  writeAutomationPreference,
+  type AutomationPreference,
+} from "@/lib/automation";
 import { ANGULAR_MAJORS, type AngularMajor } from "../domain/types";
 import { computeAngularRoute, prepareAngularPreflight } from "../workflow/setup";
 import { putAngularPreflight } from "../scenarios/angular-store";
@@ -30,6 +34,7 @@ export function AngularSetupPage() {
   const [targetMajor, setTargetMajor] = useState<AngularMajor>(21);
   const [error, setError] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
+  const [automationPreference, setAutomationPreference] = useState<AutomationPreference>("MANUAL");
   const diagnosticTimerRef = useRef<number | null>(null);
 
   const route = useMemo(
@@ -192,6 +197,32 @@ export function AngularSetupPage() {
             <Panel>
               <PanelHeader
                 eyebrow="03"
+                title="Automation preference"
+                description="Choose whether eligible governance decisions should be progressed automatically after this setup is approved."
+              />
+              <label className="mt-5 flex items-start gap-3 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-[var(--mf-primary)]"
+                  checked={automationPreference === "AUTO_APPROVE_ELIGIBLE"}
+                  onChange={(event) => {
+                    const next = event.target.checked ? "AUTO_APPROVE_ELIGIBLE" : "MANUAL";
+                    setAutomationPreference(next);
+                    writeAutomationPreference("angular", next);
+                  }}
+                />
+                <span>
+                  <span className="block text-sm font-semibold">Auto-approve eligible gates</span>
+                  <span className="mt-1 block text-xs leading-5 text-[var(--mf-text-muted)]">
+                    Uses only decisions already allowed by the Angular gate policy. The workspace still pauses when no safe automatic decision exists.
+                  </span>
+                </span>
+              </label>
+            </Panel>
+
+            <Panel>
+              <PanelHeader
+                eyebrow="04"
                 title="Source review"
                 description="Deterministic source analysis identifies the Angular family, workspace topology, builder, lockfile authority, and dependency footprint."
               />
@@ -222,6 +253,7 @@ export function AngularSetupPage() {
                 <DetailRow label="Source protection" value="Read-only" />
                 <DetailRow label="Readiness" value={<StatusBadge label={preview.status} />} />
                 <DetailRow label="Diagnostics" value={<StatusBadge label={diagnostics.status === "COMPLETE" ? "READY" : "PENDING"} />} />
+                <DetailRow label="Automation" value={automationPreference === "AUTO_APPROVE_ELIGIBLE" ? "Eligible gates" : "Manual approvals"} />
                 <DetailRow label="Warnings" value={preview.warnings.length} />
                 <DetailRow label="Blockers" value={preview.blockers.length} />
                 <DetailRow label="Evidence" value={preview.evidence.length} />

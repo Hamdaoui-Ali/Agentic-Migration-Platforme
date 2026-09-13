@@ -75,6 +75,7 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | final report | `v2_final_report_service.py` |
 | LLM activity | `v2_llm_invocation_ledger.py` |
 | New Migration UI | `web/control-tower/app/migrations/new/*` |
+| setup environment diagnosis reveal and automation preference | `web/control-tower/app/migrations/new/*`, `schemas/run_configuration.py`; presentation preference is local and does not alter Java gate authority |
 | Cockpit UI | `web/control-tower/app/migrations/[jobId]/MigrationCockpit.tsx` and components |
 | target-version UI | `Stage4TargetVersionComparison.tsx` |
 

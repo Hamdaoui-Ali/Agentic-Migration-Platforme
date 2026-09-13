@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -8,6 +9,38 @@ import {
   createJavaJob,
   prepareJavaMigration,
 } from "../src/stacks/java/workflow/setup.ts";
+import {
+  AUTOMATION_STORAGE_VERSION,
+  automationStorageKey,
+  parseAutomationPreference,
+  readAutomationPreference,
+} from "../src/lib/automation.ts";
+
+test("automation preference uses a versioned key and defaults to manual", () => {
+  assert.equal(AUTOMATION_STORAGE_VERSION, 1);
+  assert.equal(automationStorageKey("java"), "migration-factory:automation:v1:java");
+  assert.equal(parseAutomationPreference(null), "MANUAL");
+  assert.equal(parseAutomationPreference("unexpected"), "MANUAL");
+  assert.equal(parseAutomationPreference("AUTO_APPROVE_ELIGIBLE"), "AUTO_APPROVE_ELIGIBLE");
+  assert.equal(
+    readAutomationPreference("java", { getItem: () => null, setItem: () => undefined }),
+    "MANUAL",
+  );
+});
+
+test("Java setup exposes explicit diagnostics and automation controls", () => {
+  const setup = readFileSync(
+    new URL("../src/stacks/java/components/java-setup-page.tsx", import.meta.url),
+    "utf8",
+  );
+  const diagnostics = readFileSync(
+    new URL("../src/components/shared/environment-diagnostics.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(setup, /EnvironmentDiagnostics/);
+  assert.match(diagnostics, /Run environment diagnosis/);
+  assert.match(setup, /Auto-approve eligible gates/);
+});
 
 test("Java route keeps included, skipped, and excluded stages separate", () => {
   const route = computeJavaRoute("SB_2_7_J11", "SB_3_5_J21");

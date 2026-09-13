@@ -1,14 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { EnvironmentDiagnostics } from "@/components/shared/environment-diagnostics";
 import { DetailRow } from "@/components/shared/detail-row";
 import { ProductHeader } from "@/components/shared/product-header";
 import { Button } from "@/components/ui/button";
 import { FormField, fieldClassName } from "@/components/ui/form-field";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  DIAGNOSTIC_DURATION_MS,
+  advanceDiagnosticState,
+  createDiagnosticState,
+  type DiagnosticRunState,
+} from "@/lib/diagnostics";
+import {
+  writeAutomationPreference,
+  type AutomationPreference,
+} from "@/lib/automation";
 import {
   JAVA_PROFILES,
   type JavaContinuationPolicy,
@@ -42,6 +53,9 @@ export function JavaSetupPage() {
     useState<JavaContinuationPolicy>("MANUAL_ON_WARNING_OR_FAILURE");
   const [proofLevel, setProofLevel] = useState<JavaProofLevel>("STRICT");
   const [error, setError] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
+  const [automationPreference, setAutomationPreference] = useState<AutomationPreference>("MANUAL");
+  const diagnosticTimerRef = useRef<number | null>(null);
 
   const sourceIndex = JAVA_PROFILES.findIndex((profile) => profile.id === sourceProfile);
   const targetOptions = JAVA_PROFILES.filter((_, index) => index > sourceIndex);
@@ -70,7 +84,42 @@ export function JavaSetupPage() {
     ],
   );
 
+  useEffect(() => {
+    return () => {
+      if (diagnosticTimerRef.current !== null) {
+        window.clearInterval(diagnosticTimerRef.current);
+      }
+    };
+  }, []);
+
+  function resetDiagnostics() {
+    if (diagnosticTimerRef.current !== null) {
+      window.clearInterval(diagnosticTimerRef.current);
+      diagnosticTimerRef.current = null;
+    }
+    setDiagnostics(createDiagnosticState());
+  }
+
+  function runDiagnostics() {
+    if (diagnosticTimerRef.current !== null) return;
+    const total = configuration.environment.length;
+    let nextState: DiagnosticRunState = { status: "RUNNING", revealed: 0 };
+    setDiagnostics(nextState);
+    const intervalMs = Math.max(250, Math.round(DIAGNOSTIC_DURATION_MS / Math.max(total, 1)));
+    diagnosticTimerRef.current = window.setInterval(() => {
+      nextState = advanceDiagnosticState(nextState, total);
+      setDiagnostics(nextState);
+      if (nextState.status === "COMPLETE") {
+        if (diagnosticTimerRef.current !== null) {
+          window.clearInterval(diagnosticTimerRef.current);
+          diagnosticTimerRef.current = null;
+        }
+      }
+    }, intervalMs);
+  }
+
   function changeSource(next: JavaProfileId) {
+    resetDiagnostics();
     setSourceProfile(next);
     const nextIndex = JAVA_PROFILES.findIndex((profile) => profile.id === next);
     const currentTargetIndex = JAVA_PROFILES.findIndex((profile) => profile.id === targetProfile);
@@ -114,16 +163,16 @@ export function JavaSetupPage() {
               />
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <FormField label="Migration name">
-                  <input className={fieldClassName} value={name} onChange={(event) => setName(event.target.value)} />
+                  <input className={fieldClassName} value={name} onChange={(event) => { resetDiagnostics(); setName(event.target.value); }} />
                 </FormField>
                 <FormField label="Project path">
-                  <input className={fieldClassName} value={sourcePath} onChange={(event) => setSourcePath(event.target.value)} />
+                  <input className={fieldClassName} value={sourcePath} onChange={(event) => { resetDiagnostics(); setSourcePath(event.target.value); }} />
                 </FormField>
                 <FormField label="Output parent">
-                  <input className={fieldClassName} value={outputParent} onChange={(event) => setOutputParent(event.target.value)} />
+                  <input className={fieldClassName} value={outputParent} onChange={(event) => { resetDiagnostics(); setOutputParent(event.target.value); }} />
                 </FormField>
                 <FormField label="Environment import">
-                  <input className={fieldClassName} value={environmentImport} onChange={(event) => setEnvironmentImport(event.target.value)} />
+                  <input className={fieldClassName} value={environmentImport} onChange={(event) => { resetDiagnostics(); setEnvironmentImport(event.target.value); }} />
                 </FormField>
               </div>
             </Panel>
@@ -143,21 +192,21 @@ export function JavaSetupPage() {
                   </select>
                 </FormField>
                 <FormField label="Target profile">
-                  <select className={fieldClassName} value={targetProfile} onChange={(event) => setTargetProfile(event.target.value as JavaProfileId)}>
+                  <select className={fieldClassName} value={targetProfile} onChange={(event) => { resetDiagnostics(); setTargetProfile(event.target.value as JavaProfileId); }}>
                     {targetOptions.map((profile) => (
                       <option key={profile.id} value={profile.id}>{profile.label}</option>
                     ))}
                   </select>
                 </FormField>
                 <FormField label="Continuation policy">
-                  <select className={fieldClassName} value={continuationPolicy} onChange={(event) => setContinuationPolicy(event.target.value as JavaContinuationPolicy)}>
+                  <select className={fieldClassName} value={continuationPolicy} onChange={(event) => { resetDiagnostics(); setContinuationPolicy(event.target.value as JavaContinuationPolicy); }}>
                     {JAVA_CONTINUATION_POLICIES.map((policy) => (
                       <option key={policy} value={policy}>{policyLabels[policy]}</option>
                     ))}
                   </select>
                 </FormField>
                 <FormField label="Proof level">
-                  <select className={fieldClassName} value={proofLevel} onChange={(event) => setProofLevel(event.target.value as JavaProofLevel)}>
+                  <select className={fieldClassName} value={proofLevel} onChange={(event) => { resetDiagnostics(); setProofLevel(event.target.value as JavaProofLevel); }}>
                     <option value="STANDARD">Standard</option>
                     <option value="STRICT">Strict</option>
                   </select>
@@ -171,6 +220,26 @@ export function JavaSetupPage() {
                 <p className="mt-1 text-xs leading-5 text-[var(--mf-text-muted)]">
                   This approval mode applies to the pre-transform approval phase only; it does not normalize the other Java phase gates.
                 </p>
+              </div>
+              <div className="mt-4 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4 accent-[var(--mf-primary)]"
+                    checked={automationPreference === "AUTO_APPROVE_ELIGIBLE"}
+                    onChange={(event) => {
+                      const next = event.target.checked ? "AUTO_APPROVE_ELIGIBLE" : "MANUAL";
+                      setAutomationPreference(next);
+                      writeAutomationPreference("java", next);
+                    }}
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold">Auto-approve eligible gates</span>
+                    <span className="mt-1 block text-xs leading-5 text-[var(--mf-text-muted)]">
+                      Progress only through decisions already allowed by the Java PhaseGate contract. Manual review remains available at every other boundary.
+                    </span>
+                  </span>
+                </label>
               </div>
             </Panel>
 
@@ -187,17 +256,7 @@ export function JavaSetupPage() {
                 title="Environment readiness"
                 description="Java 11, 17, 21, Maven, and AI/Azure smoke readiness are checked before the job starts."
               />
-              <div className="mt-5 divide-y divide-[var(--mf-border)]">
-                {configuration.environment.map((check) => (
-                  <div key={check.id} className="flex items-center justify-between gap-5 py-3 first:pt-0 last:pb-0">
-                    <div>
-                      <p className="text-sm font-semibold">{check.label}</p>
-                      <p className="mt-0.5 text-xs text-[var(--mf-text-muted)]">{check.value}</p>
-                    </div>
-                    <StatusBadge label={check.status} />
-                  </div>
-                ))}
-              </div>
+              <EnvironmentDiagnostics checks={configuration.environment} state={diagnostics} onRun={runDiagnostics} />
             </Panel>
           </div>
 
@@ -212,6 +271,8 @@ export function JavaSetupPage() {
                 <DetailRow label="Proof" value={proofLevel} />
                 <DetailRow label="Repair attempts" value={configuration.maxRepairAttempts} />
                 <DetailRow label="Readiness" value={<StatusBadge label={configuration.readiness} />} />
+                <DetailRow label="Diagnostics" value={<StatusBadge label={diagnostics.status === "COMPLETE" ? "READY" : "PENDING"} />} />
+                <DetailRow label="Automation" value={automationPreference === "AUTO_APPROVE_ELIGIBLE" ? "Eligible gates" : "Manual approvals"} />
               </dl>
               {configuration.blockers.map((blocker) => (
                 <div key={blocker} className="mt-4 rounded-lg border border-[var(--mf-danger)]/35 bg-[var(--mf-danger-soft)] p-3 text-xs text-[var(--mf-danger)]">
@@ -223,7 +284,7 @@ export function JavaSetupPage() {
                   {error}
                 </div>
               ) : null}
-              <Button className="mt-5 w-full" onClick={startMigration} disabled={configuration.readiness !== "READY"}>
+              <Button className="mt-5 w-full" onClick={startMigration} disabled={configuration.readiness !== "READY" || diagnostics.status !== "COMPLETE"}>
                 Create governed migration
               </Button>
             </Panel>
