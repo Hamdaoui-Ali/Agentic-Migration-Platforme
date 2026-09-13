@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { ProductHeader } from "@/components/shared/product-header";
+import { AppShell } from "@/components/shared/app-shell";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
+import type { ShellAction } from "@/components/shared/presentation-types";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
 import {
   playbackNow,
@@ -23,9 +24,9 @@ import {
   putAngularRun,
   resetAngularState,
 } from "../scenarios/angular-store";
-import { applyAngularGateDecision } from "../workflow/run";
+import { getAllowedPreTransformDecisions, applyAngularGateDecision } from "../workflow/run";
 import { advanceAngularLiveExecution } from "../workflow/live";
-import { applyAngularStageGateDecision } from "../workflow/proven";
+import { applyAngularStageGateDecision, getAllowedStageDecisions } from "../workflow/proven";
 import {
   createAngularPartialDelivery,
   restartAngularActiveStage,
@@ -42,6 +43,7 @@ import { AngularProvenExecution } from "./angular-proven-execution";
 import { AngularRepairWorkspace } from "./angular-repair-workspace";
 import { AngularStageDecisionPanel } from "./angular-stage-decision-panel";
 import type { AngularStageGateDecision, AngularStageGateId } from "../domain/run-types";
+import { angularConsoleEntries, angularJourney, angularNav, angularObservatory } from "./angular-presentation";
 
 const tabs = [
   { id: "overview", label: "Overview" },
@@ -49,6 +51,8 @@ const tabs = [
   { id: "evidence", label: "Evidence" },
   { id: "diagnostics", label: "Diagnostics" },
 ];
+
+const currentEpochMs = () => Date.now();
 
 export function AngularControlTowerPage() {
   const params = useParams<{ runId: string }>();
@@ -121,7 +125,7 @@ export function AngularControlTowerPage() {
   ) {
     try {
       setError(null);
-      const nowMs = Date.now();
+      const nowMs = currentEpochMs();
       const next = applyAngularGateDecision(
         run,
         gate,
@@ -147,7 +151,7 @@ export function AngularControlTowerPage() {
   ) {
     try {
       setError(null);
-      const nowMs = Date.now();
+      const nowMs = currentEpochMs();
       const next = applyAngularStageGateDecision(
         run,
         gate,
@@ -183,18 +187,73 @@ export function AngularControlTowerPage() {
     }
   }
 
+  const shellActions: ShellAction[] = (() => {
+    if (run.liveExecution || !run.currentGate) return [];
+
+    if (["G07", "G09", "G10", "G11", "G12"].includes(run.currentGate)) {
+      const gateId = run.currentGate as AngularStageGateId;
+      const gate = run.stageExecution?.gates[gateId];
+      if (!gate || gate.status !== "PENDING") return [];
+      return getAllowedStageDecisions(gateId).map((decision) => ({
+        id: `stage-${gateId}-${decision.toLowerCase()}`,
+        label:
+          decision === "REQUEST_MODIFICATION"
+            ? "Request modification"
+            : decision === "APPROVE"
+              ? "Approve gate"
+              : "Reject gate",
+        variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
+        onSelect: () => handleStageDecision(gateId, decision, ""),
+      }));
+    }
+
+    if (["G02", "G03", "G04", "G05", "G06"].includes(run.currentGate)) {
+      const gateId = run.currentGate as AngularPreTransformGateId;
+      const gate = run.gates[gateId];
+      if (!gate || gate.status !== "PENDING") return [];
+      return getAllowedPreTransformDecisions(gateId).map((decision) => ({
+        id: `pre-${gateId}-${decision.toLowerCase()}`,
+        label:
+          decision === "REQUEST_MODIFICATION"
+            ? "Request modification"
+            : decision === "APPROVE_WITH_COMMENT"
+              ? "Approve with comment"
+              : decision === "APPROVE"
+                ? "Approve gate"
+                : "Reject gate",
+        variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
+        disabled: decision === "APPROVE_WITH_COMMENT",
+        onSelect: () => handleDecision(gateId, decision, ""),
+      }));
+    }
+
+    return [];
+  })();
+
+  const navigation = angularNav(active, run).map((item) => ({
+    ...item,
+    onSelect: () => {
+      if (["workspace", "pipeline", "evidence", "diagnostics"].includes(item.id)) {
+        setActive(item.id === "workspace" ? "overview" : item.id);
+      }
+      if (item.id === "logs") {
+        document.querySelector('[aria-label="Live console"]')?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    },
+  }));
+
   return (
-    <div className="mf-page">
-      <ProductHeader
-        breadcrumb="Angular / Migration Workspace"
-        actions={
-          <div className="flex items-center gap-2">
-            <WorkspaceResetButton onReset={resetAngularState} />
-            <StatusBadge label={run.state} />
-          </div>
-        }
-      />
-      <main className="mf-container py-7 lg:py-9">
+    <AppShell
+      stack="angular"
+      breadcrumb="Angular / Migration Workspace"
+      status={<StatusBadge label={run.state} />}
+      nav={navigation}
+      journey={angularJourney(run)}
+      observatoryEntries={angularObservatory(run)}
+      consoleEntries={angularConsoleEntries(run)}
+      actions={shellActions}
+    >
+      <div className="space-y-6">
         <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#b51f32]">Angular Migration</p>
@@ -203,13 +262,14 @@ export function AngularControlTowerPage() {
               Angular {run.sourceMajor} → Angular {run.targetMajor} · governed adjacent-major execution
             </p>
           </div>
-          <p className="text-xs text-[var(--mf-text-soft)]">
+          <div className="flex flex-wrap items-center gap-3">
             {run.liveExecution
               ? "Execution active · live events synchronized"
               : run.currentGate
                 ? "Awaiting governed decision · evidence synchronized"
                 : "Evidence synchronized"}
-          </p>
+            <WorkspaceResetButton onReset={resetAngularState} />
+          </div>
         </div>
 
         <div ref={latestUpdateRef} className="scroll-mt-4">
@@ -264,7 +324,7 @@ export function AngularControlTowerPage() {
           ) : null}
         </div>
 
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
