@@ -14,7 +14,7 @@
 - Dark implementation: `C:\Users\aliha\AppData\Local\Temp\migration-factory-ui-qa\angular-dark-v3.png` (`1440 × 980`, CSS viewport `1440 × 980`, device scale `1`).
 - Narrow implementation: `C:\Users\aliha\AppData\Local\Temp\migration-factory-ui-qa\angular-mobile-v2.png` (`390 × 844`, CSS viewport `390 × 844`, device scale `1`).
 - Java route evidence: `C:\Users\aliha\AppData\Local\Temp\migration-factory-ui-qa\java-light-v2.png` and `java-mobile-v3.png` (`1440 × 980` and `390 × 844`, device scale `1`).
-- Interaction evidence: `C:\Users\aliha\AppData\Local\Temp\migration-factory-ui-qa\playwright-angular-interaction.png`.
+- Interaction evidence: `C:\Users\aliha\AppData\Local\Temp\migration-factory-ui-qa\playwright-angular-final.png`.
 
 ## Comparison evidence
 
