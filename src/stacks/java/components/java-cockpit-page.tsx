@@ -447,7 +447,16 @@ export function JavaCockpitPage() {
           {active === "pipeline" ? (
             <div className="space-y-6">
               <JavaPipeline job={job} />
-              <JavaRepairWorkspace job={job} />
+              <JavaRepairWorkspace
+                job={job}
+                onAcceptApply={() => decide("repair_review", "CONTINUE", { comment: "Accepted reviewed diff and apply it." })}
+                onRequestModification={(correction) =>
+                  decide("repair_review", "REVISE", { comment: correction || "Request modification from reviewed diff." })
+                }
+                onSubmitCorrection={(correction) =>
+                  decide("repair_review", "REVISE", { comment: `Typed correction: ${correction}` })
+                }
+              />
             </div>
           ) : null}
           {active === "evidence" ? (

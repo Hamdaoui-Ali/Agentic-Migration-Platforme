@@ -34,6 +34,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | policy-selected post-validation authority | `proven_stage_execution_service.py`, `candidate_promotion_service.py`, `stage_gate_service.py`, persisted run evidence |
 | sealing | `services/stage_sealing_service.py`, `orchestration/transformer_sealing_flow.py` |
 | repair/causal policy | repair services, `domain/repair_lifecycle.py`, proven run evidence |
+| reviewed diff correction actions | repair services, `domain/repair_lifecycle.py`, `services/stage_gate_service.py`; the composer is presentation-only and routes apply/request/typed-review intent to the existing G10 decision owner |
 | commands/logs | `api/routes/run_commands.py`, command domain/services |
 | rollback | `api/routes/stage_rollback.py` |
 | partial delivery | `api/routes/partial_delivery.py` |
@@ -71,6 +72,7 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | Gate Assistant | `v2_gate_assistant.py` |
 | repair | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `v2_repair_projection.py` — normal repair attempts are scoped to route stages 1–3 |
 | Repair Assistant | `repair_assistant_service.py` |
+| reviewed diff correction actions | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `Java GitDiffView`; the composer keeps the patch immutable and routes apply/request/typed-review intent to the existing `repair_review` gate |
 | target versions/POM | `target_version_update.py`, `target_version_validation_coordinator.py`, POM proposer/editor/review/validator/xml patcher — CSV/XLSX target authorities are parsed before comparison |
 | Stage 4 terminal behavior | `v2_stage_progression.py`, `v2_orchestrator_runner.py`, `schemas/phase_gate.py` |
 | final report | `v2_final_report_service.py` |

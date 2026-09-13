@@ -398,7 +398,16 @@ export function AngularControlTowerPage() {
             <div className="space-y-6">
               <AngularPipeline run={run} />
               <AngularProvenExecution run={run} />
-              <AngularRepairWorkspace run={run} />
+              <AngularRepairWorkspace
+                run={run}
+                onAcceptApply={() => handleStageDecision("G10", "APPROVE", "Accepted reviewed diff and apply it.")}
+                onRequestModification={(correction) =>
+                  handleStageDecision("G10", "REQUEST_MODIFICATION", correction || "Request modification from reviewed diff.")
+                }
+                onSubmitCorrection={(correction) =>
+                  handleStageDecision("G10", "REQUEST_MODIFICATION", correction)
+                }
+              />
             </div>
           ) : null}
           {active === "evidence" ? <AngularEvidenceWorkspace run={run} /> : null}
