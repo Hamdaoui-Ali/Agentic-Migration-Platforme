@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 
 import { EnvironmentDiagnostics } from "@/components/shared/environment-diagnostics";
@@ -17,8 +17,10 @@ import {
   type DiagnosticRunState,
 } from "@/lib/diagnostics";
 import {
+  getAutomationPreferenceServerSnapshot,
+  getAutomationPreferenceSnapshot,
+  subscribeAutomationPreference,
   writeAutomationPreference,
-  type AutomationPreference,
 } from "@/lib/automation";
 import {
   JAVA_PROFILES,
@@ -54,8 +56,12 @@ export function JavaSetupPage() {
   const [proofLevel, setProofLevel] = useState<JavaProofLevel>("STRICT");
   const [error, setError] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
-  const [automationPreference, setAutomationPreference] = useState<AutomationPreference>("MANUAL");
   const diagnosticTimerRef = useRef<number | null>(null);
+  const automationPreference = useSyncExternalStore(
+    (listener) => subscribeAutomationPreference("java", listener),
+    () => getAutomationPreferenceSnapshot("java"),
+    getAutomationPreferenceServerSnapshot,
+  );
 
   const sourceIndex = JAVA_PROFILES.findIndex((profile) => profile.id === sourceProfile);
   const targetOptions = JAVA_PROFILES.filter((_, index) => index > sourceIndex);
@@ -229,7 +235,6 @@ export function JavaSetupPage() {
                     checked={automationPreference === "AUTO_APPROVE_ELIGIBLE"}
                     onChange={(event) => {
                       const next = event.target.checked ? "AUTO_APPROVE_ELIGIBLE" : "MANUAL";
-                      setAutomationPreference(next);
                       writeAutomationPreference("java", next);
                     }}
                   />

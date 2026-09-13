@@ -42,6 +42,7 @@ test("Angular setup uses an explicit run button and semantic check status hooks"
     "utf8",
   );
   assert.match(setup, /EnvironmentDiagnostics/);
+  assert.match(setup, /getAutomationPreferenceSnapshot\("angular"\)/);
   assert.match(diagnostics, /Run environment diagnosis/);
   assert.match(diagnostics, /data-diagnostic-status/);
   assert.match(diagnostics, /BLOCKED/);

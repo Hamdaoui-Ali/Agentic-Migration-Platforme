@@ -40,6 +40,7 @@ test("Java setup exposes explicit diagnostics and automation controls", () => {
   assert.match(setup, /EnvironmentDiagnostics/);
   assert.match(diagnostics, /Run environment diagnosis/);
   assert.match(setup, /Auto-approve eligible gates/);
+  assert.match(setup, /getAutomationPreferenceSnapshot\("java"\)/);
 });
 
 test("Java route keeps included, skipped, and excluded stages separate", () => {

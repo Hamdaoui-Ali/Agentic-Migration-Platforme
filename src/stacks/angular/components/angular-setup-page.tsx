@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 
 import { EnvironmentDiagnostics } from "@/components/shared/environment-diagnostics";
@@ -17,8 +17,10 @@ import {
   type DiagnosticRunState,
 } from "@/lib/diagnostics";
 import {
+  getAutomationPreferenceServerSnapshot,
+  getAutomationPreferenceSnapshot,
+  subscribeAutomationPreference,
   writeAutomationPreference,
-  type AutomationPreference,
 } from "@/lib/automation";
 import { ANGULAR_MAJORS, type AngularMajor } from "../domain/types";
 import { computeAngularRoute, prepareAngularPreflight } from "../workflow/setup";
@@ -34,8 +36,12 @@ export function AngularSetupPage() {
   const [targetMajor, setTargetMajor] = useState<AngularMajor>(21);
   const [error, setError] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
-  const [automationPreference, setAutomationPreference] = useState<AutomationPreference>("MANUAL");
   const diagnosticTimerRef = useRef<number | null>(null);
+  const automationPreference = useSyncExternalStore(
+    (listener) => subscribeAutomationPreference("angular", listener),
+    () => getAutomationPreferenceSnapshot("angular"),
+    getAutomationPreferenceServerSnapshot,
+  );
 
   const route = useMemo(
     () => computeAngularRoute(sourceMajor, targetMajor),
@@ -207,7 +213,6 @@ export function AngularSetupPage() {
                   checked={automationPreference === "AUTO_APPROVE_ELIGIBLE"}
                   onChange={(event) => {
                     const next = event.target.checked ? "AUTO_APPROVE_ELIGIBLE" : "MANUAL";
-                    setAutomationPreference(next);
                     writeAutomationPreference("angular", next);
                   }}
                 />
