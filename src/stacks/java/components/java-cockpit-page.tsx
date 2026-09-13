@@ -13,7 +13,9 @@ import {
   isAutomationEnabled,
   pickEligibleDecision,
   subscribeAutomationPreference,
+  writeAutomationPreference,
 } from "@/lib/automation";
+import { AutomationModeControl } from "@/components/shared/automation-mode-control";
 import {
   playbackNow,
   rebaseLiveExecutionStart,
@@ -398,6 +400,10 @@ export function JavaCockpitPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <AutomationModeControl
+              preference={automationPreference}
+              onChange={(next) => writeAutomationPreference("java", next)}
+            />
             <StatusBadge label={isAutomationEnabled(automationPreference) ? "AUTO MODE" : "MANUAL MODE"} />
             <span className="hidden font-mono text-[11px] text-[var(--mf-text-soft)] md:inline">
               {job.id}

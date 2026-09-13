@@ -21,7 +21,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | source validation/analysis | `backend/app/api/routes/sources.py`, `source_analysis.py` |
 | environment/runtime readiness | `backend/app/api/routes/environment.py`, runtime/execution-profile routes |
 | setup environment diagnosis reveal | `backend/app/api/routes/environment.py`, runtime/execution-profile routes; presentation timing is local and deterministic |
-| eligible-gate automation preference | `AGENTS.md` and Angular gate services; local presentation runner only calls the existing allowed decision set |
+| eligible-gate automation preference | `AGENTS.md` and Angular gate services; local presentation runner only calls the existing allowed decision set; the workspace header can switch the local preference back to manual |
 | G02 | `backend/app/domain/g02.py`, `backend/app/api/routes/g02.py` |
 | baseline/G03 | `baseline.py`, `baseline_matrix.py`, `baseline_parity.py`, `baseline_g03.py`, `domain/baseline_qualification.py` |
 | G04 analysis | `domain/analysis.py`, `api/routes/analysis.py` |
@@ -81,7 +81,7 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | LLM activity | `v2_llm_invocation_ledger.py` |
 | New Migration UI | `web/control-tower/app/migrations/new/*` |
 | setup environment diagnosis reveal and automation preference | `web/control-tower/app/migrations/new/*`, `schemas/run_configuration.py`; presentation preference is local and does not alter Java gate authority |
-| eligible-gate automation preference | `v2_phase_gate_service.py`, `v2_gate_action_service.py`; local presentation runner selects only `CONTINUE`/`APPROVE` when those decisions are allowed |
+| eligible-gate automation preference | `v2_phase_gate_service.py`, `v2_gate_action_service.py`; local presentation runner selects only `CONTINUE`/`APPROVE` when those decisions are allowed; the workspace header can switch the local preference back to manual |
 | cancellation action | `v2_phase_gate_service.py`, `v2_gate_action_service.py`, cancellation workflow/evidence; cancellation remains an out-of-band operator action and is never projected as a PhaseGate or pipeline phase |
 | Cockpit UI | `web/control-tower/app/migrations/[jobId]/MigrationCockpit.tsx` and components |
 | target-version UI | `Stage4TargetVersionComparison.tsx` |

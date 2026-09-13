@@ -28,8 +28,18 @@ test("workspace automation stays stack-owned and opt-in", () => {
     new URL("../src/stacks/java/components/java-cockpit-page.tsx", import.meta.url),
     "utf8",
   );
+  const control = readFileSync(
+    new URL("../src/components/shared/automation-mode-control.tsx", import.meta.url),
+    "utf8",
+  );
   assert.match(angular, /isAutomationEnabled/);
   assert.match(angular, /getAllowedStageDecisions/);
+  assert.match(angular, /AutomationModeControl/);
+  assert.match(angular, /writeAutomationPreference/);
   assert.match(java, /isAutomationEnabled/);
   assert.match(java, /getJavaGateDecisions/);
+  assert.match(java, /AutomationModeControl/);
+  assert.match(java, /writeAutomationPreference/);
+  assert.match(control, /Auto-approve eligible gates/);
+  assert.match(control, /Manual approvals/);
 });

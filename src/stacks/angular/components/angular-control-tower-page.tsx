@@ -13,7 +13,9 @@ import {
   isAutomationEnabled,
   pickEligibleDecision,
   subscribeAutomationPreference,
+  writeAutomationPreference,
 } from "@/lib/automation";
+import { AutomationModeControl } from "@/components/shared/automation-mode-control";
 import {
   playbackNow,
   rebaseLiveExecutionStart,
@@ -351,6 +353,10 @@ export function AngularControlTowerPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <AutomationModeControl
+              preference={automationPreference}
+              onChange={(next) => writeAutomationPreference("angular", next)}
+            />
             <StatusBadge label={isAutomationEnabled(automationPreference) ? "AUTO MODE" : "MANUAL MODE"} />
             {run.liveExecution
               ? "Execution active · live events synchronized"
