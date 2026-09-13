@@ -84,6 +84,7 @@ export function JavaCockpitPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
+  const latestUpdateMountedRef = useRef(false);
   const playbackSpeed = usePlaybackSpeed();
 
   const liveExecution = job.liveExecution;
@@ -129,7 +130,15 @@ export function JavaCockpitPage() {
 
   useEffect(() => {
     const currentGate = job.currentGate;
-    if (liveExecution || !currentGate) return;
+    if (liveExecution) {
+      latestUpdateMountedRef.current = true;
+      return;
+    }
+    if (!currentGate) return;
+    if (!latestUpdateMountedRef.current) {
+      latestUpdateMountedRef.current = true;
+      return;
+    }
 
     const frame = window.requestAnimationFrame(() => {
       latestUpdateRef.current?.scrollIntoView({

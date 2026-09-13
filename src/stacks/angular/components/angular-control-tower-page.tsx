@@ -62,6 +62,7 @@ export function AngularControlTowerPage() {
   const [error, setError] = useState<string | null>(null);
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
+  const latestUpdateMountedRef = useRef(false);
   const playbackSpeed = usePlaybackSpeed();
 
   const liveExecution = run.liveExecution;
@@ -107,7 +108,15 @@ export function AngularControlTowerPage() {
 
   useEffect(() => {
     const currentGate = run.currentGate;
-    if (liveExecution || !currentGate) return;
+    if (liveExecution) {
+      latestUpdateMountedRef.current = true;
+      return;
+    }
+    if (!currentGate) return;
+    if (!latestUpdateMountedRef.current) {
+      latestUpdateMountedRef.current = true;
+      return;
+    }
 
     const frame = window.requestAnimationFrame(() => {
       latestUpdateRef.current?.scrollIntoView({
