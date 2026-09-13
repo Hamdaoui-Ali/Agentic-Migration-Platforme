@@ -20,6 +20,8 @@ This file maps presentation behavior to the two audited source snapshots.
 | G01 | `backend/app/domain/preflight.py`, `backend/app/api/routes/preflights.py` |
 | source validation/analysis | `backend/app/api/routes/sources.py`, `source_analysis.py` |
 | environment/runtime readiness | `backend/app/api/routes/environment.py`, runtime/execution-profile routes |
+| setup environment diagnosis reveal | `backend/app/api/routes/environment.py`, runtime/execution-profile routes; presentation timing is local and deterministic |
+| eligible-gate automation preference | `AGENTS.md` and Angular gate services; local presentation runner only calls the existing allowed decision set |
 | G02 | `backend/app/domain/g02.py`, `backend/app/api/routes/g02.py` |
 | baseline/G03 | `baseline.py`, `baseline_matrix.py`, `baseline_parity.py`, `baseline_g03.py`, `domain/baseline_qualification.py` |
 | G04 analysis | `domain/analysis.py`, `api/routes/analysis.py` |
@@ -32,12 +34,14 @@ This file maps presentation behavior to the two audited source snapshots.
 | policy-selected post-validation authority | `proven_stage_execution_service.py`, `candidate_promotion_service.py`, `stage_gate_service.py`, persisted run evidence |
 | sealing | `services/stage_sealing_service.py`, `orchestration/transformer_sealing_flow.py` |
 | repair/causal policy | repair services, `domain/repair_lifecycle.py`, proven run evidence |
+| reviewed diff correction actions | repair services, `domain/repair_lifecycle.py`, `services/stage_gate_service.py`; the composer is presentation-only and routes apply/request/typed-review intent to the existing G10 decision owner |
 | commands/logs | `api/routes/run_commands.py`, command domain/services |
 | rollback | `api/routes/stage_rollback.py` |
 | partial delivery | `api/routes/partial_delivery.py` |
 | terminal recovery | `terminal_lifecycle.py`, `terminal_operation.py` |
 | audit/quality | `execution_audit.py`, `quality_metrics.py` |
 | assistant/LLM | `assistant.py`, `llm.py` |
+| persistent migration assistant surface | `assistant.py`, `llm.py`; the global FAB is a presentation surface and does not mutate workflow state |
 | current hardcoded route debt | `frontend/src/presentation/runJourney.ts`, `currentAction.ts` |
 
 ### Angular discrepancy rule
@@ -69,11 +73,16 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | Gate Assistant | `v2_gate_assistant.py` |
 | repair | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `v2_repair_projection.py` — normal repair attempts are scoped to route stages 1–3 |
 | Repair Assistant | `repair_assistant_service.py` |
+| persistent migration assistant surface | `v2_gate_assistant.py`, `repair_assistant_service.py`; the global FAB is a presentation surface and does not mutate workflow state |
+| reviewed diff correction actions | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `Java GitDiffView`; the composer keeps the patch immutable and routes apply/request/typed-review intent to the existing `repair_review` gate |
 | target versions/POM | `target_version_update.py`, `target_version_validation_coordinator.py`, POM proposer/editor/review/validator/xml patcher — CSV/XLSX target authorities are parsed before comparison |
 | Stage 4 terminal behavior | `v2_stage_progression.py`, `v2_orchestrator_runner.py`, `schemas/phase_gate.py` |
 | final report | `v2_final_report_service.py` |
 | LLM activity | `v2_llm_invocation_ledger.py` |
 | New Migration UI | `web/control-tower/app/migrations/new/*` |
+| setup environment diagnosis reveal and automation preference | `web/control-tower/app/migrations/new/*`, `schemas/run_configuration.py`; presentation preference is local and does not alter Java gate authority |
+| eligible-gate automation preference | `v2_phase_gate_service.py`, `v2_gate_action_service.py`; local presentation runner selects only `CONTINUE`/`APPROVE` when those decisions are allowed |
+| cancellation action | `v2_phase_gate_service.py`, `v2_gate_action_service.py`, cancellation workflow/evidence; cancellation remains an out-of-band operator action and is never projected as a PhaseGate or pipeline phase |
 | Cockpit UI | `web/control-tower/app/migrations/[jobId]/MigrationCockpit.tsx` and components |
 | target-version UI | `Stage4TargetVersionComparison.tsx` |
 

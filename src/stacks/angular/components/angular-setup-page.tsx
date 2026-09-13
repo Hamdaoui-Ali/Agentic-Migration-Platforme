@@ -1,14 +1,27 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 
+import { EnvironmentDiagnostics } from "@/components/shared/environment-diagnostics";
 import { ProductHeader } from "@/components/shared/product-header";
 import { DetailRow } from "@/components/shared/detail-row";
 import { Button } from "@/components/ui/button";
 import { FormField, fieldClassName } from "@/components/ui/form-field";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  DIAGNOSTIC_DURATION_MS,
+  advanceDiagnosticState,
+  createDiagnosticState,
+  type DiagnosticRunState,
+} from "@/lib/diagnostics";
+import {
+  getAutomationPreferenceServerSnapshot,
+  getAutomationPreferenceSnapshot,
+  subscribeAutomationPreference,
+  writeAutomationPreference,
+} from "@/lib/automation";
 import { ANGULAR_MAJORS, type AngularMajor } from "../domain/types";
 import { computeAngularRoute, prepareAngularPreflight } from "../workflow/setup";
 import { putAngularPreflight } from "../scenarios/angular-store";
@@ -22,6 +35,13 @@ export function AngularSetupPage() {
   const [sourceMajor, setSourceMajor] = useState<AngularMajor>(11);
   const [targetMajor, setTargetMajor] = useState<AngularMajor>(21);
   const [error, setError] = useState<string | null>(null);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
+  const diagnosticTimerRef = useRef<number | null>(null);
+  const automationPreference = useSyncExternalStore(
+    (listener) => subscribeAutomationPreference("angular", listener),
+    () => getAutomationPreferenceSnapshot("angular"),
+    getAutomationPreferenceServerSnapshot,
+  );
 
   const route = useMemo(
     () => computeAngularRoute(sourceMajor, targetMajor),
@@ -42,7 +62,42 @@ export function AngularSetupPage() {
 
   const targetOptions = ANGULAR_MAJORS.filter((major) => major > sourceMajor);
 
+  useEffect(() => {
+    return () => {
+      if (diagnosticTimerRef.current !== null) {
+        window.clearInterval(diagnosticTimerRef.current);
+      }
+    };
+  }, []);
+
+  function resetDiagnostics() {
+    if (diagnosticTimerRef.current !== null) {
+      window.clearInterval(diagnosticTimerRef.current);
+      diagnosticTimerRef.current = null;
+    }
+    setDiagnostics(createDiagnosticState());
+  }
+
+  function runDiagnostics() {
+    if (diagnosticTimerRef.current !== null) return;
+    const total = preview.environment.length;
+    let nextState: DiagnosticRunState = { status: "RUNNING", revealed: 0 };
+    setDiagnostics(nextState);
+    const intervalMs = Math.max(250, Math.round(DIAGNOSTIC_DURATION_MS / Math.max(total, 1)));
+    diagnosticTimerRef.current = window.setInterval(() => {
+      nextState = advanceDiagnosticState(nextState, total);
+      setDiagnostics(nextState);
+      if (nextState.status === "COMPLETE") {
+        if (diagnosticTimerRef.current !== null) {
+          window.clearInterval(diagnosticTimerRef.current);
+          diagnosticTimerRef.current = null;
+        }
+      }
+    }, intervalMs);
+  }
+
   function handleSourceChange(value: AngularMajor) {
+    resetDiagnostics();
     setSourceMajor(value);
     if (targetMajor <= value) {
       setTargetMajor((ANGULAR_MAJORS.find((major) => major > value) ?? 21) as AngularMajor);
@@ -101,13 +156,13 @@ export function AngularSetupPage() {
               />
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <FormField label="Run name">
-                  <input className={fieldClassName} value={runName} onChange={(event) => setRunName(event.target.value)} />
+                  <input className={fieldClassName} value={runName} onChange={(event) => { resetDiagnostics(); setRunName(event.target.value); }} />
                 </FormField>
                 <FormField label="Source application">
-                  <input className={fieldClassName} value={sourcePath} onChange={(event) => setSourcePath(event.target.value)} />
+                  <input className={fieldClassName} value={sourcePath} onChange={(event) => { resetDiagnostics(); setSourcePath(event.target.value); }} />
                 </FormField>
                 <FormField label="Output parent">
-                  <input className={fieldClassName} value={outputParent} onChange={(event) => setOutputParent(event.target.value)} />
+                  <input className={fieldClassName} value={outputParent} onChange={(event) => { resetDiagnostics(); setOutputParent(event.target.value); }} />
                 </FormField>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField label="Detected source">
@@ -125,7 +180,7 @@ export function AngularSetupPage() {
                     <select
                       className={fieldClassName}
                       value={targetMajor}
-                      onChange={(event) => setTargetMajor(Number(event.target.value) as AngularMajor)}
+                      onChange={(event) => { resetDiagnostics(); setTargetMajor(Number(event.target.value) as AngularMajor); }}
                     >
                       {targetOptions.map((major) => (
                         <option key={major} value={major}>Angular {major}</option>
@@ -142,22 +197,37 @@ export function AngularSetupPage() {
                 title="Environment diagnostics"
                 description="Required runtime, CLI, browser, catalogue, and AI capabilities are verified before production readiness can be reviewed."
               />
-              <div className="mt-5 divide-y divide-[var(--mf-border)]">
-                {preview.environment.map((check) => (
-                  <div key={check.id} className="flex items-center justify-between gap-5 py-3 first:pt-0 last:pb-0">
-                    <div>
-                      <p className="text-sm font-semibold">{check.label}</p>
-                      <p className="mt-0.5 text-xs text-[var(--mf-text-muted)]">{check.value}</p>
-                    </div>
-                    <StatusBadge label={check.status} />
-                  </div>
-                ))}
-              </div>
+              <EnvironmentDiagnostics checks={preview.environment} state={diagnostics} onRun={runDiagnostics} />
             </Panel>
 
             <Panel>
               <PanelHeader
                 eyebrow="03"
+                title="Automation preference"
+                description="Choose whether eligible governance decisions should be progressed automatically after this setup is approved."
+              />
+              <label className="mt-5 flex items-start gap-3 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 accent-[var(--mf-primary)]"
+                  checked={automationPreference === "AUTO_APPROVE_ELIGIBLE"}
+                  onChange={(event) => {
+                    const next = event.target.checked ? "AUTO_APPROVE_ELIGIBLE" : "MANUAL";
+                    writeAutomationPreference("angular", next);
+                  }}
+                />
+                <span>
+                  <span className="block text-sm font-semibold">Auto-approve eligible gates</span>
+                  <span className="mt-1 block text-xs leading-5 text-[var(--mf-text-muted)]">
+                    Uses only decisions already allowed by the Angular gate policy. The workspace still pauses when no safe automatic decision exists.
+                  </span>
+                </span>
+              </label>
+            </Panel>
+
+            <Panel>
+              <PanelHeader
+                eyebrow="04"
                 title="Source review"
                 description="Deterministic source analysis identifies the Angular family, workspace topology, builder, lockfile authority, and dependency footprint."
               />
@@ -187,6 +257,8 @@ export function AngularSetupPage() {
                 <DetailRow label="Stages" value={route.length} />
                 <DetailRow label="Source protection" value="Read-only" />
                 <DetailRow label="Readiness" value={<StatusBadge label={preview.status} />} />
+                <DetailRow label="Diagnostics" value={<StatusBadge label={diagnostics.status === "COMPLETE" ? "READY" : "PENDING"} />} />
+                <DetailRow label="Automation" value={automationPreference === "AUTO_APPROVE_ELIGIBLE" ? "Eligible gates" : "Manual approvals"} />
                 <DetailRow label="Warnings" value={preview.warnings.length} />
                 <DetailRow label="Blockers" value={preview.blockers.length} />
                 <DetailRow label="Evidence" value={preview.evidence.length} />
@@ -204,7 +276,7 @@ export function AngularSetupPage() {
                 </div>
               ) : null}
 
-              <Button className="mt-5 w-full" onClick={reviewReadiness} disabled={preview.status === "BLOCKED"}>
+              <Button className="mt-5 w-full" onClick={reviewReadiness} disabled={preview.status === "BLOCKED" || diagnostics.status !== "COMPLETE"}>
                 Review production readiness
               </Button>
               <p className="mt-3 text-center text-[11px] leading-4 text-[var(--mf-text-soft)]">

@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "next/navigation";
 
 import { AppShell } from "@/components/shared/app-shell";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
 import type { ShellAction } from "@/components/shared/presentation-types";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
+import {
+  getAutomationPreferenceServerSnapshot,
+  getAutomationPreferenceSnapshot,
+  isAutomationEnabled,
+  pickEligibleDecision,
+  subscribeAutomationPreference,
+} from "@/lib/automation";
 import {
   playbackNow,
   rebaseLiveExecutionStart,
@@ -63,7 +70,15 @@ export function AngularControlTowerPage() {
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
   const latestUpdateMountedRef = useRef(false);
+  const autoDecisionCompletedRef = useRef<string | null>(null);
+  const autoDecisionTimerRef = useRef<number | null>(null);
   const playbackSpeed = usePlaybackSpeed();
+
+  const automationPreference = useSyncExternalStore(
+    (listener) => subscribeAutomationPreference("angular", listener),
+    () => getAutomationPreferenceSnapshot("angular"),
+    getAutomationPreferenceServerSnapshot,
+  );
 
   const liveExecution = run.liveExecution;
 
@@ -126,6 +141,70 @@ export function AngularControlTowerPage() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [liveExecution, run.currentGate]);
+
+  useEffect(() => {
+    if (autoDecisionTimerRef.current !== null) {
+      window.clearTimeout(autoDecisionTimerRef.current);
+      autoDecisionTimerRef.current = null;
+    }
+    if (!isAutomationEnabled(automationPreference) || liveExecution || !run.currentGate) return;
+
+    const currentGate = run.currentGate;
+    const stageGate = ["G07", "G09", "G10", "G11", "G12"].includes(currentGate);
+    const preTransformGate = ["G02", "G03", "G04", "G05", "G06"].includes(currentGate);
+    if (!stageGate && !preTransformGate) return;
+
+    const gate = stageGate
+      ? run.stageExecution?.gates[currentGate as AngularStageGateId]
+      : run.gates[currentGate as AngularPreTransformGateId];
+    if (!gate || gate.status !== "PENDING") return;
+
+    const allowed = stageGate
+      ? getAllowedStageDecisions(currentGate as AngularStageGateId)
+      : getAllowedPreTransformDecisions(currentGate as AngularPreTransformGateId);
+    const decision = pickEligibleDecision(allowed, ["APPROVE"] as const);
+    if (!decision) return;
+
+    const decisionKey = `${currentGate}:${gate.checksum}`;
+    if (autoDecisionCompletedRef.current === decisionKey) return;
+
+    autoDecisionTimerRef.current = window.setTimeout(() => {
+      autoDecisionCompletedRef.current = decisionKey;
+      try {
+        const nowMs = currentEpochMs();
+        const next = stageGate
+          ? applyAngularStageGateDecision(
+              run,
+              currentGate as AngularStageGateId,
+              decision as AngularStageGateDecision,
+              "",
+              new Date(nowMs).toISOString(),
+              nowMs,
+            )
+          : applyAngularGateDecision(
+              run,
+              currentGate as AngularPreTransformGateId,
+              decision as AngularGovernanceDecision,
+              "",
+              new Date(nowMs).toISOString(),
+              nowMs,
+            );
+        putAngularRun(next);
+        setRun(next);
+        setActive("pipeline");
+        setError(null);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Unable to progress the eligible gate automatically.");
+      }
+    }, 700);
+
+    return () => {
+      if (autoDecisionTimerRef.current !== null) {
+        window.clearTimeout(autoDecisionTimerRef.current);
+        autoDecisionTimerRef.current = null;
+      }
+    };
+  }, [automationPreference, liveExecution, run]);
 
   function handleDecision(
     gate: AngularPreTransformGateId,
@@ -272,6 +351,7 @@ export function AngularControlTowerPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge label={isAutomationEnabled(automationPreference) ? "AUTO MODE" : "MANUAL MODE"} />
             {run.liveExecution
               ? "Execution active · live events synchronized"
               : run.currentGate
@@ -318,7 +398,16 @@ export function AngularControlTowerPage() {
             <div className="space-y-6">
               <AngularPipeline run={run} />
               <AngularProvenExecution run={run} />
-              <AngularRepairWorkspace run={run} />
+              <AngularRepairWorkspace
+                run={run}
+                onAcceptApply={() => handleStageDecision("G10", "APPROVE", "Accepted reviewed diff and apply it.")}
+                onRequestModification={(correction) =>
+                  handleStageDecision("G10", "REQUEST_MODIFICATION", correction || "Request modification from reviewed diff.")
+                }
+                onSubmitCorrection={(correction) =>
+                  handleStageDecision("G10", "REQUEST_MODIFICATION", correction)
+                }
+              />
             </div>
           ) : null}
           {active === "evidence" ? <AngularEvidenceWorkspace run={run} /> : null}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CorrectionComposer } from "@/components/shared/correction-composer";
 import { fieldClassName } from "@/components/ui/form-field";
 import { GitDiffView } from "@/components/ui/git-diff-view";
 import { Panel, PanelHeader } from "@/components/ui/panel";
@@ -10,7 +11,17 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import type { JavaJobModel } from "../domain/run-types";
 import { answerJavaRepairAssistant } from "../workflow/assistant";
 
-export function JavaRepairWorkspace({ job }: { job: JavaJobModel }) {
+export function JavaRepairWorkspace({
+  job,
+  onAcceptApply,
+  onRequestModification,
+  onSubmitCorrection,
+}: {
+  job: JavaJobModel;
+  onAcceptApply: () => void;
+  onRequestModification: (correction: string) => void;
+  onSubmitCorrection: (correction: string) => void;
+}) {
   const [question, setQuestion] = useState("What is happening?");
   const [answer, setAnswer] = useState(() =>
     answerJavaRepairAssistant(job, "What is happening?"),
@@ -21,6 +32,10 @@ export function JavaRepairWorkspace({ job }: { job: JavaJobModel }) {
   const currentStageAttempts = job.repair.attempts.filter(
     (attempt) => attempt.stage === job.currentStage,
   );
+  const repairGateOpen =
+    job.currentGate === "repair_review" &&
+    job.phaseGates.at(-1)?.type === "repair_review" &&
+    job.phaseGates.at(-1)?.status === "PENDING";
 
   function ask() {
     setAnswer(answerJavaRepairAssistant(job, question));
@@ -79,6 +94,14 @@ export function JavaRepairWorkspace({ job }: { job: JavaJobModel }) {
                 </p>
                 <GitDiffView diff={attempt.diff} />
               </div>
+              {attempt.stage === job.currentStage && attempt.status === "REVIEWED" ? (
+                <CorrectionComposer
+                  disabled={!repairGateOpen}
+                  onAcceptApply={repairGateOpen ? onAcceptApply : undefined}
+                  onRequestModification={repairGateOpen ? onRequestModification : undefined}
+                  onSubmitCorrection={repairGateOpen ? onSubmitCorrection : undefined}
+                />
+              ) : null}
             </article>
           ))}
         </div>

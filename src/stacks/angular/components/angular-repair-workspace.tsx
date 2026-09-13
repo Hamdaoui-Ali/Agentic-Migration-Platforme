@@ -1,4 +1,5 @@
 import { GitDiffView } from "@/components/ui/git-diff-view";
+import { CorrectionComposer } from "@/components/shared/correction-composer";
 import { Panel, PanelHeader } from "@/components/ui/panel";
 import { StatusBadge } from "@/components/ui/status-badge";
 import type {
@@ -15,7 +16,17 @@ const GOVERNED_OPERATION_KINDS: ReadonlySet<
   "TOOLING_TRANSITION",
 ]);
 
-export function AngularRepairWorkspace({ run }: { run: AngularRunModel }) {
+export function AngularRepairWorkspace({
+  run,
+  onAcceptApply,
+  onRequestModification,
+  onSubmitCorrection,
+}: {
+  run: AngularRunModel;
+  onAcceptApply: () => void;
+  onRequestModification: (correction: string) => void;
+  onSubmitCorrection: (correction: string) => void;
+}) {
   const stage = run.stageExecution;
   if (!stage || stage.repairAttempts.length === 0) return null;
 
@@ -38,6 +49,8 @@ export function AngularRepairWorkspace({ run }: { run: AngularRunModel }) {
           const sourcePatch = attempt.proposalKind === "SOURCE_PATCH";
           const hasUnifiedGitPatch = attempt.diff.startsWith("diff --git ");
           const operationEvidence = attempt.diff;
+          const repairGateOpen =
+            run.currentGate === "G10" && stage.gates.G10.status === "PENDING";
 
           return (
             <details
@@ -183,6 +196,12 @@ export function AngularRepairWorkspace({ run }: { run: AngularRunModel }) {
                       </div>
                       <StatusBadge label="ACTION REQUIRED" tone="warning" />
                     </div>
+                    <CorrectionComposer
+                      disabled={!repairGateOpen}
+                      onAcceptApply={repairGateOpen ? onAcceptApply : undefined}
+                      onRequestModification={repairGateOpen ? onRequestModification : undefined}
+                      onSubmitCorrection={repairGateOpen ? onSubmitCorrection : undefined}
+                    />
                   </div>
                 ) : null}
               </div>

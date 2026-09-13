@@ -25,7 +25,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
           <PanelHeader
             eyebrow="Execution phases"
             title="Java phase pipeline"
-            description="Execution phases describe what the agents and validators are doing. They are intentionally independent from the Spring Boot route stages."
+            description="Execution phases describe what the agents and validators are doing. They are intentionally independent from the Spring Boot route stages. Cancellation is an out-of-band operator action, never a PhaseGate or pipeline phase."
           />
           <div className="mt-5 space-y-2">
             {job.pipeline.map((phase) => (
