@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { recentMigrations } from "../src/data/recent-migrations.ts";
@@ -34,4 +35,20 @@ test("Angular presenter cards match the Angular 11 CRUD source-grounded scenario
   assert.equal(angular.length, 2);
   assert.ok(angular.every((migration) => migration.name === "Angular 11 CRUD Example"));
   assert.ok(angular.every((migration) => migration.route === "Angular 11 → 21"));
+});
+
+test("landing presents an operational launchpad with theme choice", () => {
+  const source = readFileSync("src/app/page.tsx", "utf8");
+  assert.match(source, /ThemeToggle|ProductHeader/);
+  assert.match(source, /Recent migrations/);
+  assert.match(source, /StatusBadge/);
+  assert.ok(recentMigrations.some((migration) => migration.status === "ACTION_REQUIRED"));
+  assert.doesNotMatch(source, /Total migrations|Success rate|Average duration/);
+});
+
+test("setup flows retain their governed primary actions", () => {
+  const angular = readFileSync("src/stacks/angular/components/angular-setup-page.tsx", "utf8");
+  const java = readFileSync("src/stacks/java/components/java-setup-page.tsx", "utf8");
+  assert.match(angular, /Review production readiness/);
+  assert.match(java, /Create governed migration/);
 });

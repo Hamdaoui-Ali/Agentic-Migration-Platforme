@@ -17,8 +17,8 @@ export function JavaRouteBoard({
   activeStatus?: "RUNNING" | "REPAIR" | null;
 }) {
   const rowClass = compact
-    ? "grid grid-cols-[54px_1fr_auto] items-center gap-3 rounded-lg border border-[var(--mf-border)] bg-white p-2.5"
-    : "grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-lg border border-[var(--mf-border)] bg-white p-3.5";
+    ? "grid grid-cols-[54px_1fr_auto] items-center gap-3 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-2.5"
+    : "grid grid-cols-[68px_1fr_auto] items-center gap-3 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-3.5";
   const titleClass = compact
     ? "text-xs font-semibold text-[var(--mf-text)]"
     : "text-sm font-semibold text-[var(--mf-text)]";

@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
-import { ProductHeader } from "@/components/shared/product-header";
+import { AppShell } from "@/components/shared/app-shell";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
+import type { ShellAction } from "@/components/shared/presentation-types";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
 import {
   playbackNow,
@@ -27,7 +28,7 @@ import {
   putJavaJob,
   resetJavaState,
 } from "../scenarios/java-store";
-import { applyJavaGateDecision } from "../workflow/cockpit";
+import { applyJavaGateDecision, getJavaGateDecisions } from "../workflow/cockpit";
 import { cancelJavaMigration } from "../workflow/cancellation";
 import { applyJavaRepairDecision } from "../workflow/repair";
 import {
@@ -50,6 +51,7 @@ import { JavaOverview } from "./java-overview";
 import { JavaPipeline } from "./java-pipeline";
 import { JavaRepairWorkspace } from "./java-repair-workspace";
 import { JavaTargetVersionsWorkspace } from "./java-target-versions-workspace";
+import { javaConsoleEntries, javaJourney, javaNav, javaObservatory } from "./java-presentation";
 
 const tabs = [
   { id: "overview", label: "Overview" },
@@ -67,11 +69,13 @@ const REPAIR_DECISIONS = [
 
 type RepairDecision = (typeof REPAIR_DECISIONS)[number];
 
+const currentEpochMs = () => Date.now();
+
 export function JavaCockpitPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = Array.isArray(params.jobId) ? params.jobId[0] : params.jobId;
   const [job, setJob] = useState<JavaJobModel>(() => {
-    const initialized = ensureJavaLiveExecution(getJavaJob(jobId), Date.now());
+    const initialized = ensureJavaLiveExecution(getJavaJob(jobId), currentEpochMs());
     if (initialized.liveExecution) putJavaJob(initialized);
     return initialized;
   });
@@ -80,6 +84,7 @@ export function JavaCockpitPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
+  const latestUpdateMountedRef = useRef(false);
   const playbackSpeed = usePlaybackSpeed();
 
   const liveExecution = job.liveExecution;
@@ -89,7 +94,7 @@ export function JavaCockpitPage() {
 
     const timer = window.setInterval(() => {
       setJob((current) => {
-        const realNowMs = Date.now();
+        const realNowMs = currentEpochMs();
         const logicalNowMs = playbackNow(
           current.liveExecution?.startedAtMs ?? realNowMs,
           realNowMs,
@@ -125,7 +130,15 @@ export function JavaCockpitPage() {
 
   useEffect(() => {
     const currentGate = job.currentGate;
-    if (liveExecution || !currentGate) return;
+    if (liveExecution) {
+      latestUpdateMountedRef.current = true;
+      return;
+    }
+    if (!currentGate) return;
+    if (!latestUpdateMountedRef.current) {
+      latestUpdateMountedRef.current = true;
+      return;
+    }
 
     const frame = window.requestAnimationFrame(() => {
       latestUpdateRef.current?.scrollIntoView({
@@ -161,7 +174,7 @@ export function JavaCockpitPage() {
       } else {
         next = applyJavaGateDecision(job, type, decision, options);
       }
-      next = ensureJavaLiveExecution(next, Date.now());
+      next = ensureJavaLiveExecution(next, currentEpochMs());
       persist(next);
       setActive("pipeline");
     } catch (caught) {
@@ -233,24 +246,82 @@ export function JavaCockpitPage() {
   const canCancel =
     job.status !== "CANCELLED" && job.status !== "COMPLETED";
 
+  const shellActions: ShellAction[] = (() => {
+    const gateType = job.currentGate;
+    const gate = gateType
+      ? job.phaseGates.find(
+          (candidate) => candidate.type === gateType && candidate.status === "PENDING",
+        )
+      : null;
+    const gateActions: ShellAction[] = gate && gateType
+      ? getJavaGateDecisions(gateType).map((decision): ShellAction => ({
+          id: `java-${gateType}-${decision.toLowerCase()}`,
+          label:
+            decision === "OVERRIDE_SOURCE_PROFILE"
+              ? "Override source"
+              : decision === "REANALYZE"
+                ? "Reanalyze"
+                : decision === "REVISE"
+                  ? "Revise plan"
+                  : decision === "APPROVE"
+                    ? "Approve gate"
+                    : decision === "REJECT"
+                      ? "Reject gate"
+                      : "Continue",
+          variant: decision === "REJECT" ? "danger" : decision === "CONTINUE" || decision === "APPROVE" ? "primary" : "secondary",
+          disabled: decision === "OVERRIDE_SOURCE_PROFILE",
+          onSelect: () => decide(gateType, decision, { comment: "" }),
+        }))
+      : [];
+
+    const terminalAction: ShellAction[] =
+      job.currentStage === 4
+        ? [{
+            id: "java-open-target-versions",
+            label: "Open target versions",
+            variant: "secondary",
+            onSelect: () => setActive("target-versions"),
+          }]
+        : [];
+    const cancellationAction: ShellAction[] = canCancel
+      ? [{
+          id: "java-cancel",
+          label: "Cancel migration",
+          variant: "danger",
+          onSelect: () => setCancelOpen(true),
+        }]
+      : [];
+    return [...gateActions, ...terminalAction, ...cancellationAction];
+  })();
+
+  const navigation = javaNav(active, job).map((item) => ({
+    ...item,
+    onSelect: () => {
+      if (["workspace", "pipeline", "evidence", "target-versions"].includes(item.id)) {
+        setActive(item.id === "workspace" ? "overview" : item.id);
+      }
+      if (item.id === "logs") {
+        document.querySelector('[aria-label="Live console"]')?.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    },
+  }));
+
   return (
-    <div className="mf-page">
-      <ProductHeader
+    <>
+      <AppShell
+        stack="java"
         breadcrumb="Spring Boot / Migration Workspace"
-        actions={
-          <div className="flex items-center gap-2">
-            <WorkspaceResetButton onReset={resetJavaState} />
-            <span className="hidden font-mono text-[11px] text-[var(--mf-text-soft)] md:inline">
-              {job.id}
-            </span>
-            <StatusBadge label={job.status} />
-          </div>
-        }
-      />
-      <main className="mf-container py-7 lg:py-9">
+        status={<StatusBadge label={job.status} />}
+        nav={navigation}
+        journey={javaJourney(job)}
+        observatoryEntries={javaObservatory(job)}
+        consoleEntries={javaConsoleEntries(job)}
+        actions={shellActions}
+      >
+      <div className="space-y-6">
         <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#355d9a]">
+            <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--mf-primary)]">
               Spring Boot Migration
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">
@@ -260,12 +331,11 @@ export function JavaCockpitPage() {
               Java route stages and execution phases are governed independently.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {canCancel ? (
-              <Button variant="danger" onClick={() => setCancelOpen(true)}>
-                Cancel migration
-              </Button>
-            ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="hidden font-mono text-[11px] text-[var(--mf-text-soft)] md:inline">
+              {job.id}
+            </span>
+            <WorkspaceResetButton onReset={resetJavaState} />
           </div>
         </div>
 
@@ -284,7 +354,7 @@ export function JavaCockpitPage() {
         ) : null}
 
         {error ? (
-          <div role="alert" className="mt-5 rounded-lg border border-[#efc1c1] bg-[var(--mf-danger-soft)] p-3 text-sm text-[var(--mf-danger)]">
+          <div role="alert" className="mt-5 rounded-lg border border-[var(--mf-danger)]/35 bg-[var(--mf-danger-soft)] p-3 text-sm text-[var(--mf-danger)]">
             {error}
           </div>
         ) : null}
@@ -331,7 +401,8 @@ export function JavaCockpitPage() {
           ) : null}
         </div>
 
-      </main>
+      </div>
+      </AppShell>
 
       <Dialog
         open={cancelOpen}
@@ -354,6 +425,6 @@ export function JavaCockpitPage() {
           Cancellation is recorded in the execution evidence.
         </p>
       </Dialog>
-    </div>
+    </>
   );
 }

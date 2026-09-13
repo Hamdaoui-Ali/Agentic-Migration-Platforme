@@ -47,7 +47,7 @@ export function JavaEvidenceWorkspace({ job }: { job: JavaJobModel }) {
               "mf-focus rounded-md border px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.05em] " +
               (filter === item
                 ? "border-[var(--mf-primary)] bg-[var(--mf-primary-soft)] text-[var(--mf-primary)]"
-                : "border-[var(--mf-border)] bg-white text-[var(--mf-text-muted)]")
+                : "border-[var(--mf-border)] bg-[var(--mf-surface)] text-[var(--mf-text-muted)]")
             }
           >
             {item}

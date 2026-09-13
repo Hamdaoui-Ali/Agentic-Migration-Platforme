@@ -20,7 +20,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
             {gateOrder.map((gateId) => {
               const gate = run.gates[gateId];
               return (
-                <div key={gate.id} className="rounded-lg border border-[var(--mf-border)] bg-white p-4">
+                <div key={gate.id} className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4">
                   <div className="flex items-start justify-between gap-5">
                     <div>
                       <p className="text-sm font-semibold">{gate.id} · {gate.label}</p>
@@ -51,7 +51,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                       <div className="border-t border-[var(--mf-border)] p-3">
                         <div className="grid gap-2 md:grid-cols-3">
                           {run.baseline.steps.map((step) => (
-                            <div key={step.id} className="rounded-md bg-white px-3 py-2">
+                            <div key={step.id} className="rounded-md bg-[var(--mf-surface)] px-3 py-2">
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-[11px] font-semibold">{step.label}</span>
                                 <StatusBadge label={step.status} />
@@ -60,7 +60,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                           ))}
                         </div>
                         {run.baseline.knownGaps.length > 0 ? (
-                          <div className="mt-3 rounded-lg border border-[#f1d69d] bg-[var(--mf-warning-soft)] p-3">
+                          <div className="mt-3 rounded-lg border border-[var(--mf-warning)]/35 bg-[var(--mf-warning-soft)] p-3">
                             <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-warning)]">
                               Baseline coverage gaps
                             </p>
@@ -134,7 +134,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                   <Fact label="Lint authority" value={run.analysis.applicationProfile.tooling.lint} />
                   <Fact label="E2E authority" value={run.analysis.applicationProfile.tooling.e2e} />
                 </div>
-                <div className="mt-3 rounded-lg border border-[var(--mf-border)] bg-white p-3">
+                <div className="mt-3 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)]">
                     Preserved routes
                   </p>
@@ -159,7 +159,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                 </p>
                 <div className="mt-3 space-y-2">
                   {run.analysis.findings.map((finding) => (
-                    <div key={finding.id} className="rounded-lg border border-[var(--mf-border)] bg-white p-4">
+                    <div key={finding.id} className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)]">
@@ -294,7 +294,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                       </div>
                     </div>
 
-                    <div className="mt-3 rounded-lg border border-[var(--mf-border)] bg-white p-4">
+                    <div className="mt-3 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)]">Full adjacent-major route</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {revision.deterministicPlan.route.map((stage) => (
@@ -386,7 +386,7 @@ function PhaseDisclosure({
     <details
       key={title + ":" + String(active)}
       open={active}
-      className="rounded-xl border border-[var(--mf-border)] bg-white shadow-sm"
+      className="rounded-xl border border-[var(--mf-border)] bg-[var(--mf-surface)] shadow-sm"
     >
       <summary className="cursor-pointer list-none px-5 py-4">
         <div className="flex items-start justify-between gap-4">
@@ -444,7 +444,7 @@ function ModelCard({
   outputTokens: number;
 }) {
   return (
-    <div className="rounded-lg border border-[var(--mf-border)] bg-white p-3">
+    <div className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold">{label}</p>
         <StatusBadge label="SUCCEEDED" />

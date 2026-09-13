@@ -12,7 +12,7 @@ export function AngularRouteBoard({
       {route.map((step, index) => (
         <div key={step.id} className="flex items-center gap-2">
           <div
-            className={`rounded-lg border border-[var(--mf-border)] bg-white font-semibold text-[var(--mf-text)] ${
+            className={`rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] font-semibold text-[var(--mf-text)] ${
               compact ? "px-2.5 py-1.5 text-xs" : "px-3.5 py-2.5 text-sm"
             }`}
           >

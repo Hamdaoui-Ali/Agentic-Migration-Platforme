@@ -21,7 +21,7 @@ export function Tabs({
     <div
       aria-label={ariaLabel}
       role="tablist"
-      className="flex min-w-0 gap-1 overflow-x-auto border-b border-[var(--mf-border)]"
+      className="mf-tabs flex min-w-0 gap-1 overflow-x-auto border-b border-[var(--mf-border)]"
     >
       {items.map((item) => {
         const selected = item.id === active;
@@ -31,6 +31,7 @@ export function Tabs({
             type="button"
             role="tab"
             aria-selected={selected}
+            tabIndex={selected ? 0 : -1}
             onClick={() => onChange(item.id)}
             className={`mf-focus relative flex h-11 shrink-0 items-center gap-2 px-3 text-sm font-semibold transition-colors ${
               selected

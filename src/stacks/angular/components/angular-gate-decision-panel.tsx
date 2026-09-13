@@ -35,7 +35,7 @@ export function AngularGateDecisionPanel({
   const decisions = getAllowedPreTransformDecisions(gateId);
 
   return (
-    <Panel className="border-[#c9d4f7]">
+    <Panel className="border-[var(--mf-primary)]/30">
       <PanelHeader
         eyebrow="Action required"
         title={`${gate.id} · ${gate.label}`}

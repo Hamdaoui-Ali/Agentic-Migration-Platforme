@@ -47,7 +47,7 @@ export function AngularAssistantPanel({ run }: { run: AngularRunModel }) {
             key={`${message.role}-${index}`}
             className={`max-w-[88%] rounded-lg px-3.5 py-3 text-sm leading-6 ${
               message.role === "assistant"
-                ? "bg-white text-[var(--mf-text)] shadow-sm"
+                ? "bg-[var(--mf-surface)] text-[var(--mf-text)] shadow-sm"
                 : "ml-auto bg-[var(--mf-primary)] text-white"
             }`}
           >
@@ -75,7 +75,7 @@ export function AngularAssistantPanel({ run }: { run: AngularRunModel }) {
           <button
             key={prompt}
             type="button"
-            className="mf-focus rounded-md border border-[var(--mf-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--mf-text-muted)] hover:text-[var(--mf-text)]"
+            className="mf-focus rounded-md border border-[var(--mf-border)] bg-[var(--mf-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--mf-text-muted)] hover:text-[var(--mf-text)]"
             onClick={() => {
               const answer = answerAngularAssistant(run, prompt);
               setMessages((current) => [

@@ -1,90 +1,40 @@
 import Link from "next/link";
+import { ArrowUpRight, Braces, Coffee, History, ShieldCheck } from "lucide-react";
 
 import { ProductHeader } from "@/components/shared/product-header";
 import { TechnologyCard } from "@/components/shared/technology-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { recentMigrations } from "@/data/recent-migrations";
 
-function AngularIcon() {
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden="true" className="h-7 w-7">
-      <path
-        d="M16 3 27 7l-2 17-9 5-9-5L5 7l11-4Z"
-        fill="#db2b3c"
-        opacity=".12"
-      />
-      <path
-        d="M16 5.2 24.6 8l-1.7 14.5-6.9 3.9-6.9-3.9L7.4 8 16 5.2Z"
-        fill="none"
-        stroke="#b51f32"
-        strokeWidth="1.6"
-      />
-      <path
-        d="m11.9 21.2 4.1-10 4.1 10M13.4 17.6h5.2"
-        stroke="#b51f32"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function JavaIcon() {
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden="true" className="h-7 w-7">
-      <path
-        d="M12 23.8c-5.2 1.1-2.6 3.2 3.5 3.3 6.2.1 9.5-1.4 9.5-2.7 0-.8-1-1.2-2.7-1.5"
-        fill="none"
-        stroke="#355d9a"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M10.1 20.4c-3.4.8-1.8 2.4 4.6 2.5 7.3.1 10.4-1.2 10.4-2.6 0-.7-.8-1.1-2.1-1.4"
-        fill="none"
-        stroke="#355d9a"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M13.2 18.7c-1.8-1.9 1.1-3.5 2.5-4.9 2.1-2.1-.2-3.5-.7-4.9"
-        fill="none"
-        stroke="#c15d2a"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M17.1 16.8c4.1-2.2 2.1-4.3.7-5.7-1.8-1.8 3.1-3.4 3.1-6"
-        fill="none"
-        stroke="#c15d2a"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export default function Home() {
   return (
     <div className="mf-page">
       <ProductHeader />
       <main>
-        <section className="mf-grid-lines border-b border-[var(--mf-border)] bg-white">
-          <div className="mf-container py-16 lg:py-20">
-            <div className="max-w-3xl">
-              <p className="text-xs font-bold uppercase tracking-[0.15em] text-[var(--mf-primary)]">
-                Migration control plane
-              </p>
-              <h1 className="mt-4 text-[clamp(2.2rem,5vw,4.25rem)] font-semibold leading-[1.02] tracking-[-0.055em] text-[var(--mf-text)]">
-                Choose your migration platform
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--mf-text-muted)]">
-                Configure, govern, execute, review, and prove complex framework migrations from one operational workspace.
-              </p>
+        <section className="border-b border-[var(--mf-border)] bg-[var(--mf-surface)]">
+          <div className="mf-container py-12 lg:py-16">
+            <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
+              <div className="max-w-2xl">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--mf-primary)]">
+                  Migration control plane
+                </p>
+                <h1 className="mt-4 text-[clamp(2.25rem,5vw,4.5rem)] font-semibold leading-[0.98] tracking-[-0.06em] text-[var(--mf-text)]">
+                  Govern every move.
+                  <br />
+                  Prove the outcome.
+                </h1>
+                <p className="mt-5 max-w-xl text-base leading-7 text-[var(--mf-text-muted)]">
+                  Configure, govern, execute, review, and prove complex framework migrations from one operational workspace.
+                </p>
+              </div>
+              <div className="mf-launch-summary max-w-xs">
+                <div className="flex items-center gap-2 text-[var(--mf-success)]"><ShieldCheck aria-hidden="true" className="h-4 w-4" /><span className="text-xs font-bold">Evidence-led execution</span></div>
+                <p className="mt-2 text-xs leading-5 text-[var(--mf-text-muted)]">Human decisions stay explicit. Every stage leaves a durable trail.</p>
+                <div className="mt-4 flex items-center gap-4 text-[11px] font-semibold text-[var(--mf-text-soft)]"><span className="inline-flex items-center gap-1.5"><History aria-hidden="true" className="h-3.5 w-3.5" />Append-only history</span><span className="inline-flex items-center gap-1.5"><Braces aria-hidden="true" className="h-3.5 w-3.5" />Two factories</span></div>
+              </div>
             </div>
 
-            <div className="mt-12 grid gap-5 lg:grid-cols-2">
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
               <TechnologyCard
                 eyebrow="Frontend"
                 title="Angular Migration"
@@ -92,7 +42,7 @@ export default function Home() {
                 meta={["Angular 11 → 21", "Node · npm", "TypeScript · Angular CLI"]}
                 href="/angular/migrations/new"
                 action="Start Angular migration"
-                icon={<AngularIcon />}
+                icon={<Braces aria-hidden="true" className="h-7 w-7" strokeWidth={1.8} />}
               />
               <TechnologyCard
                 eyebrow="Backend"
@@ -101,7 +51,7 @@ export default function Home() {
                 meta={["Spring Boot 2.7 → 4.0", "Java · Maven", "Reviewed phase gates"]}
                 href="/java/migrations/new"
                 action="Start Spring Boot migration"
-                icon={<JavaIcon />}
+                icon={<Coffee aria-hidden="true" className="h-7 w-7" strokeWidth={1.8} />}
               />
             </div>
           </div>
@@ -117,10 +67,10 @@ export default function Home() {
                 Recent migrations
               </h2>
             </div>
-            <span className="text-xs text-[var(--mf-text-soft)]">Updated from current workspace</span>
+            <Link href="/" className="mf-focus inline-flex items-center gap-1 text-xs font-semibold text-[var(--mf-primary)]">View all activity <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" /></Link>
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-xl border border-[var(--mf-border)] bg-white shadow-[var(--mf-shadow)]">
+          <div className="mt-5 overflow-hidden rounded-xl border border-[var(--mf-border)] bg-[var(--mf-surface)] shadow-[var(--mf-shadow)]">
             <div className="hidden grid-cols-[1.2fr_.8fr_.9fr_.6fr_90px] gap-4 border-b border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)] md:grid">
               <span>Application</span>
               <span>Platform</span>

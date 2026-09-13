@@ -22,7 +22,7 @@ export function AngularStageDecisionPanel({
   const gate = stage.gates[gateId];
 
   return (
-    <Panel className="border-[#c9d4f7]">
+    <Panel className="border-[var(--mf-primary)]/30">
       <PanelHeader
         eyebrow="Governed decision"
         title={`${gate.id} · ${gate.label}`}

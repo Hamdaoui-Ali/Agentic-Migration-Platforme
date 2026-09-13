@@ -31,7 +31,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
             {job.pipeline.map((phase) => (
               <div
                 key={phase.id}
-                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-[var(--mf-border)] bg-white px-4 py-3"
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] px-4 py-3"
               >
                 <div>
                   <p className="text-sm font-semibold">{phase.label}</p>
@@ -245,7 +245,7 @@ function PhaseDisclosure({
     <details
       key={title + ":" + String(active)}
       open={active}
-      className="rounded-xl border border-[var(--mf-border)] bg-white shadow-sm"
+      className="rounded-xl border border-[var(--mf-border)] bg-[var(--mf-surface)] shadow-sm"
     >
       <summary className="cursor-pointer list-none px-5 py-4">
         <div className="flex items-start justify-between gap-4">

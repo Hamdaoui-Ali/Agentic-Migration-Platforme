@@ -58,7 +58,7 @@ export function JavaGateDecisionPanel({
   const overrideOptions = JAVA_PROFILES.slice(0, targetIndex);
 
   return (
-    <Panel className="border-[#c9d4f7]">
+    <Panel className="border-[var(--mf-primary)]/30">
       <PanelHeader
         eyebrow="Action required"
         title={gate.type.replaceAll("_", " ")}
