@@ -41,6 +41,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | terminal recovery | `terminal_lifecycle.py`, `terminal_operation.py` |
 | audit/quality | `execution_audit.py`, `quality_metrics.py` |
 | assistant/LLM | `assistant.py`, `llm.py` |
+| persistent migration assistant surface | `assistant.py`, `llm.py`; the global FAB is a presentation surface and does not mutate workflow state |
 | current hardcoded route debt | `frontend/src/presentation/runJourney.ts`, `currentAction.ts` |
 
 ### Angular discrepancy rule
@@ -72,6 +73,7 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | Gate Assistant | `v2_gate_assistant.py` |
 | repair | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `v2_repair_projection.py` — normal repair attempts are scoped to route stages 1–3 |
 | Repair Assistant | `repair_assistant_service.py` |
+| persistent migration assistant surface | `v2_gate_assistant.py`, `repair_assistant_service.py`; the global FAB is a presentation surface and does not mutate workflow state |
 | reviewed diff correction actions | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `Java GitDiffView`; the composer keeps the patch immutable and routes apply/request/typed-review intent to the existing `repair_review` gate |
 | target versions/POM | `target_version_update.py`, `target_version_validation_coordinator.py`, POM proposer/editor/review/validator/xml patcher — CSV/XLSX target authorities are parsed before comparison |
 | Stage 4 terminal behavior | `v2_stage_progression.py`, `v2_orchestrator_runner.py`, `schemas/phase_gate.py` |
