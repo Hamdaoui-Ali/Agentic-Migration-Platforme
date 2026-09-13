@@ -82,6 +82,7 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | New Migration UI | `web/control-tower/app/migrations/new/*` |
 | setup environment diagnosis reveal and automation preference | `web/control-tower/app/migrations/new/*`, `schemas/run_configuration.py`; presentation preference is local and does not alter Java gate authority |
 | eligible-gate automation preference | `v2_phase_gate_service.py`, `v2_gate_action_service.py`; local presentation runner selects only `CONTINUE`/`APPROVE` when those decisions are allowed |
+| cancellation action | `v2_phase_gate_service.py`, `v2_gate_action_service.py`, cancellation workflow/evidence; cancellation remains an out-of-band operator action and is never projected as a PhaseGate or pipeline phase |
 | Cockpit UI | `web/control-tower/app/migrations/[jobId]/MigrationCockpit.tsx` and components |
 | target-version UI | `Stage4TargetVersionComparison.tsx` |
 
