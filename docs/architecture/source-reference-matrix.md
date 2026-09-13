@@ -20,6 +20,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | G01 | `backend/app/domain/preflight.py`, `backend/app/api/routes/preflights.py` |
 | source validation/analysis | `backend/app/api/routes/sources.py`, `source_analysis.py` |
 | environment/runtime readiness | `backend/app/api/routes/environment.py`, runtime/execution-profile routes |
+| setup environment diagnosis reveal | `backend/app/api/routes/environment.py`, runtime/execution-profile routes; presentation timing is local and deterministic |
 | G02 | `backend/app/domain/g02.py`, `backend/app/api/routes/g02.py` |
 | baseline/G03 | `baseline.py`, `baseline_matrix.py`, `baseline_parity.py`, `baseline_g03.py`, `domain/baseline_qualification.py` |
 | G04 analysis | `domain/analysis.py`, `api/routes/analysis.py` |
