@@ -258,7 +258,7 @@ export function JavaCockpitPage() {
           id: `java-${gateType}-${decision.toLowerCase()}`,
           label:
             decision === "OVERRIDE_SOURCE_PROFILE"
-              ? "Override source profile"
+              ? "Override source"
               : decision === "REANALYZE"
                 ? "Reanalyze"
                 : decision === "REVISE"

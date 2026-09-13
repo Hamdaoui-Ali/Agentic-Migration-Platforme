@@ -7,6 +7,11 @@ function evidenceKind(category: string): ObservatoryEntry["kind"] {
   return "evidence";
 }
 
+function compactProfile(profile: string): string {
+  const match = profile.match(/^SB_(\d+)_(\d+)_J(\d+)$/);
+  return match ? `${match[1]}.${match[2]}/J${match[3]}` : profile;
+}
+
 function stageStatus(job: JavaJobModel, stage: JavaJobModel["route"][number]): JourneyNode["status"] {
   if (stage.disposition === "SKIPPED") return "SKIPPED";
   if (stage.disposition === "EXCLUDED") return "EXCLUDED";
@@ -24,7 +29,7 @@ function stageStatus(job: JavaJobModel, stage: JavaJobModel["route"][number]): J
 export function javaJourney(job: JavaJobModel): JourneyNode[] {
   return job.route.map((stage) => ({
     id: `stage-${stage.stage}`,
-    label: stage.label,
+    label: `${compactProfile(stage.source)} → ${compactProfile(stage.target)}`,
     status: stageStatus(job, stage),
     detail: stage.terminal ? "Terminal-special · no normal PhaseGate" : `Stage ${stage.stage}`,
   }));

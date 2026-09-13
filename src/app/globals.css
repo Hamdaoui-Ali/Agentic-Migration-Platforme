@@ -373,6 +373,16 @@ a {
   color: var(--mf-text-muted);
 }
 
+.mf-journey-node > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.mf-journey-node > span:nth-child(2) > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .mf-journey-icon {
   display: grid;
   height: 24px;
