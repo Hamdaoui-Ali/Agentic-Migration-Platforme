@@ -65,6 +65,7 @@ export function AssistantFab() {
       {open ? (
         <section
           className="mf-assistant-panel"
+          data-resizable="true"
           role="dialog"
           aria-modal="false"
           aria-labelledby="migration-assistant-title"
@@ -155,7 +156,7 @@ export function AssistantFab() {
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        {open ? <X size={20} /> : <MessageCircle size={21} />}
+        {open ? <X size={24} /> : <MessageCircle size={25} />}
         <span className="sr-only">{open ? "Close" : "Open"} migration assistant</span>
       </button>
     </>

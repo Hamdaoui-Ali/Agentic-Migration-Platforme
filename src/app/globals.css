@@ -536,8 +536,8 @@ a {
   bottom: 22px;
   z-index: 70;
   display: inline-grid;
-  height: 50px;
-  width: 50px;
+  height: 64px;
+  width: 64px;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--mf-primary) 65%, var(--mf-border));
   border-radius: 999px;
@@ -559,9 +559,15 @@ a {
   bottom: 84px;
   z-index: 69;
   display: flex;
-  width: min(370px, calc(100vw - 32px));
+  width: min(440px, calc(100vw - 32px));
+  height: min(600px, calc(100dvh - 120px));
+  min-width: 320px;
+  min-height: 360px;
+  max-width: min(720px, calc(100vw - 24px));
+  max-height: calc(100dvh - 100px);
   flex-direction: column;
   overflow: hidden;
+  resize: both;
   border: 1px solid var(--mf-border-strong);
   border-radius: 16px;
   background: var(--mf-surface);
@@ -606,8 +612,8 @@ a {
 
 .mf-assistant-messages {
   display: flex;
-  max-height: 260px;
-  min-height: 108px;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
@@ -855,12 +861,20 @@ a {
   .mf-assistant-fab {
     right: 16px;
     bottom: 16px;
+    height: 58px;
+    width: 58px;
   }
 
   .mf-assistant-panel {
     right: 12px;
     bottom: 78px;
     width: calc(100vw - 24px);
+    height: min(680px, calc(100dvh - 96px));
+    min-width: 0;
+    min-height: 320px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 88px);
+    resize: vertical;
   }
 }
 
