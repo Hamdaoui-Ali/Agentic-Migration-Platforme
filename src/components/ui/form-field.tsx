@@ -11,7 +11,7 @@ export function FormField({ label, hint, children }: { label: string; hint?: str
 }
 
 export const fieldClassName =
-  "mf-focus h-10 w-full rounded-[9px] border border-[var(--mf-border-strong)] bg-white px-3 text-sm text-[var(--mf-text)] outline-none transition-colors placeholder:text-[var(--mf-text-soft)] hover:border-[#aeb9c7] focus:border-[var(--mf-primary)]";
+  "mf-focus h-10 w-full rounded-[9px] border border-[var(--mf-border-strong)] bg-[var(--mf-surface)] px-3 text-sm text-[var(--mf-text)] outline-none transition-colors placeholder:text-[var(--mf-text-soft)] hover:border-[var(--mf-primary)] focus:border-[var(--mf-primary)]";
 
 export const textareaClassName =
-  "mf-focus min-h-24 w-full resize-y rounded-[9px] border border-[var(--mf-border-strong)] bg-white px-3 py-2.5 text-sm text-[var(--mf-text)] outline-none transition-colors placeholder:text-[var(--mf-text-soft)] hover:border-[#aeb9c7] focus:border-[var(--mf-primary)]";
+  "mf-focus min-h-24 w-full resize-y rounded-[9px] border border-[var(--mf-border-strong)] bg-[var(--mf-surface)] px-3 py-2.5 text-sm text-[var(--mf-text)] outline-none transition-colors placeholder:text-[var(--mf-text-soft)] hover:border-[var(--mf-primary)] focus:border-[var(--mf-primary)]";

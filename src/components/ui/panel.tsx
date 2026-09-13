@@ -11,7 +11,7 @@ export function Panel({
 }) {
   return (
     <section
-      className={`rounded-[var(--mf-radius-md)] border border-[var(--mf-border)] bg-[var(--mf-surface)] shadow-[var(--mf-shadow)] ${padded ? "p-5" : ""} ${className}`}
+      className={`mf-panel rounded-[var(--mf-radius-md)] border border-[var(--mf-border)] bg-[var(--mf-surface)] shadow-[var(--mf-shadow)] ${padded ? "p-5" : ""} ${className}`}
     >
       {children}
     </section>

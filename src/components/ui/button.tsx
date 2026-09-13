@@ -7,9 +7,9 @@ const variants: Record<ButtonVariant, string> = {
   primary:
     "bg-[var(--mf-primary)] text-white border-[var(--mf-primary)] hover:bg-[var(--mf-primary-hover)]",
   secondary:
-    "bg-white text-[var(--mf-text)] border-[var(--mf-border-strong)] hover:bg-[var(--mf-surface-subtle)]",
+    "bg-[var(--mf-surface)] text-[var(--mf-text)] border-[var(--mf-border-strong)] hover:bg-[var(--mf-surface-subtle)]",
   danger:
-    "bg-white text-[var(--mf-danger)] border-[#efbcbc] hover:bg-[var(--mf-danger-soft)]",
+    "bg-[var(--mf-surface)] text-[var(--mf-danger)] border-[var(--mf-danger)]/40 hover:bg-[var(--mf-danger-soft)]",
   ghost:
     "bg-transparent text-[var(--mf-text-muted)] border-transparent hover:bg-[var(--mf-surface-muted)] hover:text-[var(--mf-text)]",
 };

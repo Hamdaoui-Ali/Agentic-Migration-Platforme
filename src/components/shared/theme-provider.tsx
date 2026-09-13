@@ -4,9 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
+  useEffect,
   type ReactNode,
 } from "react";
 
@@ -19,36 +19,61 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+let currentTheme: Theme = "light";
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function emit() {
+  listeners.forEach((listener) => listener());
+}
+
+function getSnapshot(): Theme {
+  if (typeof window === "undefined") return currentTheme;
+  const stored = readStoredTheme(window.localStorage.getItem(themeStorageKey));
+  if (stored) {
+    currentTheme = stored;
+    return stored;
+  }
+  const fromSystem = systemTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
+  currentTheme = fromSystem;
+  return fromSystem;
+}
+
+function getServerSnapshot(): Theme {
+  return "light";
+}
+
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    const stored = readStoredTheme(window.localStorage.getItem(themeStorageKey));
-    const next = stored ?? systemTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setThemeState(next);
-    applyTheme(next);
-
-    if (stored) return;
-
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = (event: MediaQueryListEvent) => {
       const system = systemTheme(event.matches);
-      setThemeState(system);
+      if (readStoredTheme(window.localStorage.getItem(themeStorageKey))) return;
+      currentTheme = system;
       applyTheme(system);
+      emit();
     };
     media.addEventListener("change", onChange);
+    applyTheme(theme);
     return () => media.removeEventListener("change", onChange);
-  }, []);
+  }, [theme]);
 
   const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
+    currentTheme = next;
     applyTheme(next);
     window.localStorage.setItem(themeStorageKey, next);
+    emit();
   }, []);
 
   const value = useMemo(() => ({ theme, setTheme }), [theme, setTheme]);
@@ -63,4 +88,3 @@ export function useTheme(): ThemeContextValue {
   }
   return value;
 }
-

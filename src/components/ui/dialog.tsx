@@ -40,7 +40,7 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative z-10 w-full max-w-lg rounded-2xl border border-[var(--mf-border)] bg-white shadow-2xl"
+        className="relative z-10 w-full max-w-lg rounded-2xl border border-[var(--mf-border)] bg-[var(--mf-surface)] text-[var(--mf-text)] shadow-2xl"
       >
         <div className="border-b border-[var(--mf-border)] px-6 py-5">
           <h2 className="font-semibold">{title}</h2>
