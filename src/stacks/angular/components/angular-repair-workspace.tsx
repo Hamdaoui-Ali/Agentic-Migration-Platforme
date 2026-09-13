@@ -43,7 +43,7 @@ export function AngularRepairWorkspace({ run }: { run: AngularRunModel }) {
             <details
               key={attempt.id}
               open={active}
-              className="rounded-xl border border-[var(--mf-border)] bg-white"
+              className="rounded-xl border border-[var(--mf-border)] bg-[var(--mf-surface)]"
             >
               <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-4 px-4 py-4">
                 <div>
@@ -168,7 +168,7 @@ export function AngularRepairWorkspace({ run }: { run: AngularRunModel }) {
                 ) : null}
 
                 {active ? (
-                  <div className="mt-4 rounded-lg border border-[#c9d4f7] bg-[#f5f7ff] p-4">
+                  <div className="mt-4 rounded-lg border border-[var(--mf-primary)]/30 bg-[var(--mf-primary-soft)] p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.09em] text-[#475ca8]">

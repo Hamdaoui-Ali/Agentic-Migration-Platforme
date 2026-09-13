@@ -28,7 +28,12 @@ export function AppShell({
       <NavigationRail stack={stack} items={nav} open={navOpen} onClose={() => setNavOpen(false)} />
       {navOpen ? <button type="button" className="mf-nav-backdrop" aria-label="Close navigation" onClick={() => setNavOpen(false)} /> : null}
       <div className="mf-shell-main">
-        <CommandBar breadcrumb={breadcrumb} status={status} onOpenNav={() => setNavOpen(true)} />
+        <CommandBar
+          breadcrumb={breadcrumb}
+          status={status}
+          notificationCount={nav.find((item) => item.id === "notifications")?.count ?? 0}
+          onOpenNav={() => setNavOpen(true)}
+        />
         <main className="mf-shell-content">
           {journey.length ? <JourneyRibbon nodes={journey} /> : null}
           <div className="mf-shell-grid">
@@ -42,4 +47,3 @@ export function AppShell({
     </div>
   );
 }
-

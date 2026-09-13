@@ -26,7 +26,7 @@ export function AngularProvenExecution({ run }: { run: AngularRunModel }) {
         <PanelHeader eyebrow="Execution groups" title="Source proof → validation" />
         <div className="mt-5 space-y-3">
           {stage.groups.map((group) => (
-            <details key={group.id} className="group rounded-lg border border-[var(--mf-border)] bg-white" open={group.status === "FAILED"}>
+            <details key={group.id} className="group rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)]" open={group.status === "FAILED"}>
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3">
                 <span className="text-sm font-semibold">{group.label}</span>
                 <StatusBadge label={group.status} />
@@ -34,7 +34,7 @@ export function AngularProvenExecution({ run }: { run: AngularRunModel }) {
               <div className="border-t border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] px-4 py-3">
                 <div className="grid gap-2 md:grid-cols-2">
                   {group.steps.map((step) => (
-                    <div key={step.id} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2">
+                    <div key={step.id} className="flex items-center justify-between gap-3 rounded-md bg-[var(--mf-surface)] px-3 py-2">
                       <span className="text-xs font-medium">{step.label}</span>
                       <StatusBadge label={step.status} />
                     </div>

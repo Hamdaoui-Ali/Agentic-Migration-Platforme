@@ -45,7 +45,7 @@ export function JavaOverview({ job }: { job: JavaJobModel }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)]">Completed</p>
             <p className="mt-2 text-xl font-semibold">{completedStageCount}</p>
           </div>
-          <div className="rounded-lg border border-[#cbd7ff] bg-[var(--mf-info-soft)] p-4">
+          <div className="rounded-lg border border-[var(--mf-info)]/30 bg-[var(--mf-info-soft)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-info)]">Current stage</p>
             <p className="mt-2 text-xl font-semibold">{job.currentStage ?? "—"}</p>
           </div>

@@ -256,7 +256,7 @@ export function AngularControlTowerPage() {
       <div className="space-y-6">
         <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.13em] text-[#b51f32]">Angular Migration</p>
+            <p className="text-xs font-bold uppercase tracking-[0.13em] text-[var(--mf-primary)]">Angular Migration</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">{run.name}</h1>
             <p className="mt-1.5 text-sm text-[var(--mf-text-muted)]">
               Angular {run.sourceMajor} → Angular {run.targetMajor} · governed adjacent-major execution
@@ -287,7 +287,7 @@ export function AngularControlTowerPage() {
         ) : null}
 
         {error ? (
-          <div role="alert" className="mt-5 rounded-lg border border-[#efc1c1] bg-[var(--mf-danger-soft)] p-3 text-sm text-[var(--mf-danger)]">
+          <div role="alert" className="mt-5 rounded-lg border border-[var(--mf-danger)]/35 bg-[var(--mf-danger-soft)] p-3 text-sm text-[var(--mf-danger)]">
             {error}
           </div>
         ) : null}

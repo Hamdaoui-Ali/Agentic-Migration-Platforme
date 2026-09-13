@@ -13,7 +13,7 @@ export default function ErrorPage({
     <div className="mf-page">
       <main className="mf-container py-16">
         <section
-          className="mx-auto max-w-2xl rounded-2xl border border-[#efc1c1] bg-white p-7 shadow-[var(--mf-shadow)]"
+          className="mx-auto max-w-2xl rounded-2xl border border-[var(--mf-danger)]/35 bg-[var(--mf-surface)] p-7 shadow-[var(--mf-shadow)]"
           role="alert"
         >
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--mf-danger)]">

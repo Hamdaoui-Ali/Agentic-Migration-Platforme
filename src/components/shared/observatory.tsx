@@ -49,8 +49,14 @@ export function Observatory({ entries }: { entries: ObservatoryEntry[] }) {
         {visible.length ? visible.map((entry) => <ObservatoryRow key={entry.id} entry={entry} />) : (
           <div className="mf-empty-state">
             <Mail aria-hidden="true" className="h-5 w-5" />
-            <p className="mt-2 text-sm font-semibold text-[var(--mf-text)]">No communication records</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--mf-text-muted)]">Notifications and email history will appear here when the run records them.</p>
+            <p className="mt-2 text-sm font-semibold text-[var(--mf-text)]">
+              {filter === "communication" ? "No communication records" : `No ${filterLabels[filter].toLowerCase()} records`}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-[var(--mf-text-muted)]">
+              {filter === "communication"
+                ? "Notifications and email history will appear here when the run records them."
+                : "This view will populate as the run records additional evidence."}
+            </p>
           </div>
         )}
       </div>

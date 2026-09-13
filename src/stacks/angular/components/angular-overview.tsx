@@ -20,11 +20,11 @@ export function AngularOverview({ run }: { run: AngularRunModel }) {
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mf-text-soft)]">Completed</p>
             <p className="mt-2 text-sm font-semibold">{approved.length > 0 ? `${approved.length} governed reviews` : "G01 readiness"}</p>
           </div>
-          <div className="rounded-lg border border-[#cbd7ff] bg-[var(--mf-info-soft)] p-4">
+          <div className="rounded-lg border border-[var(--mf-info)]/30 bg-[var(--mf-info-soft)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mf-info)]">Now</p>
             <p className="mt-2 text-sm font-semibold">{run.currentAction}</p>
           </div>
-          <div className="rounded-lg border border-[var(--mf-border)] bg-white p-4">
+          <div className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--mf-text-soft)]">Next</p>
             <p className="mt-2 text-sm font-semibold">
               {nextGate ? `${nextGate.id} · ${nextGate.label}` : run.phase === "STAGE_PREPARATION" ? "Stage runtime certification" : "Requested target proof"}

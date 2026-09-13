@@ -118,7 +118,7 @@ export function JavaTargetVersionsWorkspace({
             </p>
           </div>
           <div className="space-y-3">
-            <label className="mf-focus flex cursor-pointer items-center justify-center rounded-[9px] border border-[var(--mf-border-strong)] bg-white px-3 py-2.5 text-sm font-semibold hover:bg-[var(--mf-surface-subtle)]">
+            <label className="mf-focus flex cursor-pointer items-center justify-center rounded-[9px] border border-[var(--mf-border-strong)] bg-[var(--mf-surface)] px-3 py-2.5 text-sm font-semibold hover:bg-[var(--mf-surface-subtle)]">
               Import CSV / XLSX
               <input
                 className="sr-only"
@@ -222,7 +222,7 @@ export function JavaTargetVersionsWorkspace({
       ) : null}
 
       {target.status === "REPAIR_READY" ? (
-        <Panel className="border-[#efc1c1]">
+        <Panel className="border-[var(--mf-danger)]/35">
           <PanelHeader
             eyebrow="AMF-252"
             title="Terminal dependency repair"
@@ -232,7 +232,7 @@ export function JavaTargetVersionsWorkspace({
           {target.repairAttempts.map((attempt) => (
             <article
               key={attempt.id}
-              className="mt-5 rounded-xl border border-[var(--mf-border)] bg-white p-4"
+              className="mt-5 rounded-xl border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -326,7 +326,7 @@ export function JavaTargetVersionsWorkspace({
                   "/artifacts/" +
                   encodeURIComponent(artifact.id)
                 }
-                className="mf-focus rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4 transition-colors hover:border-[#b8c6f3] hover:bg-white"
+                className="mf-focus rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4 transition-colors hover:border-[var(--mf-primary)] hover:bg-[var(--mf-surface)]"
               >
                 <p className="text-sm font-semibold">{artifact.label}</p>
                 <p className="mt-1 text-xs text-[var(--mf-text-soft)]">

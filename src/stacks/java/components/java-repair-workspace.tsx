@@ -46,7 +46,7 @@ export function JavaRepairWorkspace({ job }: { job: JavaJobModel }) {
           {job.repair.attempts.map((attempt) => (
             <article
               key={attempt.id}
-              className="rounded-xl border border-[var(--mf-border)] bg-white p-4"
+              className="rounded-xl border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -113,7 +113,7 @@ export function JavaRepairWorkspace({ job }: { job: JavaJobModel }) {
               <button
                 key={prompt}
                 type="button"
-                className="mf-focus rounded-md border border-[var(--mf-border)] bg-white px-2.5 py-1.5 text-xs font-semibold text-[var(--mf-text-muted)] hover:text-[var(--mf-text)]"
+                className="mf-focus rounded-md border border-[var(--mf-border)] bg-[var(--mf-surface)] px-2.5 py-1.5 text-xs font-semibold text-[var(--mf-text-muted)] hover:text-[var(--mf-text)]"
                 onClick={() => {
                   setQuestion(prompt);
                   setAnswer(answerJavaRepairAssistant(job, prompt));

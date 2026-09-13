@@ -7,10 +7,12 @@ import { ThemeToggle } from "./theme-toggle";
 export function CommandBar({
   breadcrumb,
   status,
+  notificationCount = 0,
   onOpenNav,
 }: {
   breadcrumb: string;
   status?: React.ReactNode;
+  notificationCount?: number;
   onOpenNav: () => void;
 }) {
   return (
@@ -34,7 +36,11 @@ export function CommandBar({
         </button>
         <button type="button" className="mf-icon-button mf-focus" aria-label="Notifications">
           <Bell aria-hidden="true" className="h-[17px] w-[17px]" />
-          <span className="mf-notification-dot" aria-label="3 unread notifications">3</span>
+          {notificationCount > 0 ? (
+            <span className="mf-notification-dot" aria-label={`${notificationCount} unread notifications`}>
+              {notificationCount}
+            </span>
+          ) : null}
         </button>
         <ThemeToggle />
         {status ? <div className="hidden sm:block">{status}</div> : null}
@@ -42,4 +48,3 @@ export function CommandBar({
     </header>
   );
 }
-

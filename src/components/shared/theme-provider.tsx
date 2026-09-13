@@ -33,7 +33,12 @@ function emit() {
 
 function getSnapshot(): Theme {
   if (typeof window === "undefined") return currentTheme;
-  const stored = readStoredTheme(window.localStorage.getItem(themeStorageKey));
+  let stored: Theme | null = null;
+  try {
+    stored = readStoredTheme(window.localStorage.getItem(themeStorageKey));
+  } catch {
+    stored = null;
+  }
   if (stored) {
     currentTheme = stored;
     return stored;
@@ -59,7 +64,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const onChange = (event: MediaQueryListEvent) => {
       const system = systemTheme(event.matches);
-      if (readStoredTheme(window.localStorage.getItem(themeStorageKey))) return;
+      try {
+        if (readStoredTheme(window.localStorage.getItem(themeStorageKey))) return;
+      } catch {
+        // Continue with the system preference when storage is unavailable.
+      }
       currentTheme = system;
       applyTheme(system);
       emit();
@@ -72,7 +81,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((next: Theme) => {
     currentTheme = next;
     applyTheme(next);
-    window.localStorage.setItem(themeStorageKey, next);
+    try {
+      window.localStorage.setItem(themeStorageKey, next);
+    } catch {
+      // The preference still applies for this session when storage is blocked.
+    }
     emit();
   }, []);
 

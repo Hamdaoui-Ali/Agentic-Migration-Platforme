@@ -1,15 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Maximize2, Pause, Play, Terminal } from "lucide-react";
 
-import { toneForStatus } from "@/lib/display";
 import type { ConsoleEntry } from "./presentation-types";
 
 export function ConsoleDrawer({ entries }: { entries: ConsoleEntry[] }) {
   const [open, setOpen] = useState(true);
   const [autoFollow, setAutoFollow] = useState(true);
   const visible = useMemo(() => entries.slice(-80), [entries]);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || !autoFollow || !bodyRef.current) return;
+    bodyRef.current.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
+  }, [autoFollow, open, visible.length]);
 
   return (
     <section className={`mf-console-drawer ${open ? "is-open" : ""}`} aria-label="Live console">
@@ -29,11 +34,11 @@ export function ConsoleDrawer({ entries }: { entries: ConsoleEntry[] }) {
         </div>
       </div>
       {open ? (
-        <div className="mf-console-body mf-scrollbar">
+        <div ref={bodyRef} className="mf-console-body mf-scrollbar" role="log" aria-live="polite" aria-relevant="additions">
           {visible.length ? visible.map((entry) => (
             <div key={entry.id} className="mf-console-line">
               <span className="text-slate-500">{entry.timestamp ?? "--:--:--"}</span>
-              <span className={`mf-console-channel tone-${toneForStatus(entry.tone ?? "neutral")}`}>[{entry.channel}]</span>
+              <span className={`mf-console-channel tone-${entry.tone ?? "neutral"}`}>[{entry.channel}]</span>
               <span className="min-w-0 text-slate-300">{entry.message}</span>
             </div>
           )) : <p className="text-xs text-slate-500">No runtime log entries have been recorded for this state.</p>}
@@ -42,4 +47,3 @@ export function ConsoleDrawer({ entries }: { entries: ConsoleEntry[] }) {
     </section>
   );
 }
-

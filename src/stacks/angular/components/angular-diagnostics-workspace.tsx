@@ -39,7 +39,7 @@ export function AngularDiagnosticsWorkspace({
               {run.diagnostics.map((diagnostic, index) => (
                 <li
                   key={`${diagnostic}-${index}`}
-                  className="rounded-lg border border-[#f1d69d] bg-[var(--mf-warning-soft)] p-3 text-sm text-[var(--mf-warning)]"
+                  className="rounded-lg border border-[var(--mf-warning)]/35 bg-[var(--mf-warning-soft)] p-3 text-sm text-[var(--mf-warning)]"
                 >
                   {diagnostic}
                 </li>
@@ -80,7 +80,7 @@ export function AngularDiagnosticsWorkspace({
             </p>
           ) : (
             run.operations.commands.slice(-6).toReversed().map((command) => (
-              <article key={command.id} className="rounded-lg border border-[var(--mf-border)] bg-white p-4">
+              <article key={command.id} className="rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface)] p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="truncate font-mono text-xs font-semibold">{command.command}</p>

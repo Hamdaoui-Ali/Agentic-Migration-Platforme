@@ -54,7 +54,7 @@ export function JavaReportArtifactPage() {
               {artifact.content}
             </pre>
           ) : (
-            <div className="mt-5 rounded-lg border border-[#efc1c1] bg-[var(--mf-danger-soft)] p-4 text-sm text-[var(--mf-danger)]">
+            <div className="mt-5 rounded-lg border border-[var(--mf-danger)]/35 bg-[var(--mf-danger-soft)] p-4 text-sm text-[var(--mf-danger)]">
               {error}
             </div>
           )}
