@@ -33,19 +33,11 @@ function emit() {
 
 function getSnapshot(): Theme {
   if (typeof window === "undefined") return currentTheme;
-  let stored: Theme | null = null;
-  try {
-    stored = readStoredTheme(window.localStorage.getItem(themeStorageKey));
-  } catch {
-    stored = null;
+  const bootstrapped = readStoredTheme(document.documentElement.dataset.theme ?? null);
+  if (bootstrapped) {
+    currentTheme = bootstrapped;
   }
-  if (stored) {
-    currentTheme = stored;
-    return stored;
-  }
-  const fromSystem = systemTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
-  currentTheme = fromSystem;
-  return fromSystem;
+  return currentTheme;
 }
 
 function getServerSnapshot(): Theme {
@@ -57,26 +49,35 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = theme;
 }
 
+function readClientStoredTheme(): Theme | null {
+  try {
+    return readStoredTheme(window.localStorage.getItem(themeStorageKey));
+  } catch {
+    return null;
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const stored = readClientStoredTheme();
+    const initial = stored ?? systemTheme(media.matches);
+    currentTheme = initial;
+    applyTheme(initial);
+    emit();
+
     const onChange = (event: MediaQueryListEvent) => {
       const system = systemTheme(event.matches);
-      try {
-        if (readStoredTheme(window.localStorage.getItem(themeStorageKey))) return;
-      } catch {
-        // Continue with the system preference when storage is unavailable.
-      }
+      if (readClientStoredTheme()) return;
       currentTheme = system;
       applyTheme(system);
       emit();
     };
     media.addEventListener("change", onChange);
-    applyTheme(theme);
     return () => media.removeEventListener("change", onChange);
-  }, [theme]);
+  }, []);
 
   const setTheme = useCallback((next: Theme) => {
     currentTheme = next;
