@@ -8,6 +8,11 @@ export interface AutomationStorage {
   setItem(key: string, value: string): void;
 }
 
+const listeners: Record<AutomationStack, Set<() => void>> = {
+  angular: new Set(),
+  java: new Set(),
+};
+
 export function automationStorageKey(stack: AutomationStack): string {
   return `migration-factory:automation:v${AUTOMATION_STORAGE_VERSION}:${stack}`;
 }
@@ -45,6 +50,7 @@ export function writeAutomationPreference(
   if (!storage) return;
   try {
     storage.setItem(automationStorageKey(stack), preference);
+    listeners[stack].forEach((listener) => listener());
   } catch {
     // The preference remains active for the current component session.
   }
@@ -52,4 +58,29 @@ export function writeAutomationPreference(
 
 export function isAutomationEnabled(preference: AutomationPreference): boolean {
   return preference === "AUTO_APPROVE_ELIGIBLE";
+}
+
+export function subscribeAutomationPreference(
+  stack: AutomationStack,
+  listener: () => void,
+): () => void {
+  listeners[stack].add(listener);
+  return () => listeners[stack].delete(listener);
+}
+
+export function getAutomationPreferenceSnapshot(
+  stack: AutomationStack,
+): AutomationPreference {
+  return readAutomationPreference(stack);
+}
+
+export function getAutomationPreferenceServerSnapshot(): AutomationPreference {
+  return "MANUAL";
+}
+
+export function pickEligibleDecision<T extends string>(
+  allowed: readonly T[],
+  priorities: readonly T[],
+): T | null {
+  return priorities.find((decision) => allowed.includes(decision)) ?? null;
 }

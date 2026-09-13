@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "next/navigation";
 
 import { AppShell } from "@/components/shared/app-shell";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
 import type { ShellAction } from "@/components/shared/presentation-types";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
+import {
+  getAutomationPreferenceServerSnapshot,
+  getAutomationPreferenceSnapshot,
+  isAutomationEnabled,
+  pickEligibleDecision,
+  subscribeAutomationPreference,
+} from "@/lib/automation";
 import {
   playbackNow,
   rebaseLiveExecutionStart,
@@ -85,7 +92,15 @@ export function JavaCockpitPage() {
   const liveExecutionRef = useRef<HTMLDivElement>(null);
   const latestUpdateRef = useRef<HTMLDivElement>(null);
   const latestUpdateMountedRef = useRef(false);
+  const autoDecisionCompletedRef = useRef<string | null>(null);
+  const autoDecisionTimerRef = useRef<number | null>(null);
   const playbackSpeed = usePlaybackSpeed();
+
+  const automationPreference = useSyncExternalStore(
+    (listener) => subscribeAutomationPreference("java", listener),
+    () => getAutomationPreferenceSnapshot("java"),
+    getAutomationPreferenceServerSnapshot,
+  );
 
   const liveExecution = job.liveExecution;
 
@@ -148,6 +163,57 @@ export function JavaCockpitPage() {
     });
     return () => window.cancelAnimationFrame(frame);
   }, [liveExecution, job.currentGate]);
+
+  useEffect(() => {
+    if (autoDecisionTimerRef.current !== null) {
+      window.clearTimeout(autoDecisionTimerRef.current);
+      autoDecisionTimerRef.current = null;
+    }
+    if (!isAutomationEnabled(automationPreference) || liveExecution || !job.currentGate) return;
+
+    const gateType = job.currentGate;
+    const gate = job.phaseGates.find(
+      (candidate) => candidate.type === gateType && candidate.status === "PENDING",
+    );
+    if (!gate) return;
+
+    const allowed =
+      gateType === "repair_review"
+        ? REPAIR_DECISIONS
+        : getJavaGateDecisions(gateType);
+    const priorities = gateType === "repair_review" ? (["CONTINUE"] as const) : (["CONTINUE", "APPROVE"] as const);
+    const decision = pickEligibleDecision(allowed, priorities);
+    if (!decision) return;
+
+    const decisionKey = `${gateType}:${gate.checksum}`;
+    if (autoDecisionCompletedRef.current === decisionKey) return;
+
+    autoDecisionTimerRef.current = window.setTimeout(() => {
+      autoDecisionCompletedRef.current = decisionKey;
+      try {
+        const next =
+          gateType === "repair_review"
+            ? applyJavaRepairDecision(job, decision as RepairDecision, "Automatic progression enabled.")
+            : applyJavaGateDecision(job, gateType, decision as JavaGateDecision, {
+                comment: "Automatic progression enabled.",
+              });
+        const ensured = ensureJavaLiveExecution(next, currentEpochMs());
+        putJavaJob(ensured);
+        setJob(ensured);
+        setActive("pipeline");
+        setError(null);
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Unable to progress the eligible gate automatically.");
+      }
+    }, 700);
+
+    return () => {
+      if (autoDecisionTimerRef.current !== null) {
+        window.clearTimeout(autoDecisionTimerRef.current);
+        autoDecisionTimerRef.current = null;
+      }
+    };
+  }, [automationPreference, liveExecution, job]);
 
   function persist(next: JavaJobModel) {
     putJavaJob(next);
@@ -332,6 +398,7 @@ export function JavaCockpitPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <StatusBadge label={isAutomationEnabled(automationPreference) ? "AUTO MODE" : "MANUAL MODE"} />
             <span className="hidden font-mono text-[11px] text-[var(--mf-text-soft)] md:inline">
               {job.id}
             </span>
