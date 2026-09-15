@@ -34,6 +34,18 @@ function approvedRunSeed(): AngularRunSeed {
   return createRunFromApprovedPreflight(approved);
 }
 
+function angularMoviesApprovedRunSeed(): AngularRunSeed {
+  const preflight = prepareAngularPreflight({
+    runName: "Angular Movies",
+    sourcePath: "/workspace/angular-movies",
+    outputParent: "/workspace/migration-output",
+    sourceMajor: 18,
+    targetMajor: 21,
+  });
+  const approved = applyG01Decision(preflight, "APPROVE");
+  return createRunFromApprovedPreflight(approved);
+}
+
 function finishLive(run: AngularRunModel): AngularRunModel {
   if (!run.liveExecution) return run;
   return advanceAngularLiveExecution(
@@ -56,20 +68,32 @@ export function seedAngularRun(id: string): AngularRunModel {
     });
   }
 
+  const seed = id === "run-angular-action"
+    ? angularMoviesApprovedRunSeed()
+    : approvedRunSeed();
   let model = createAngularRunModel({
-    ...approvedRunSeed(),
+    ...seed,
     id,
   });
 
-  if (id === "run-angular-action") {
+  if (id === "run-angular-action" || id === "run-angular-recovery") {
     model = finishLive(applyAngularGateDecision(model, "G02", "APPROVE"));
     model = finishLive(applyAngularGateDecision(model, "G03", "APPROVE"));
     model = finishLive(applyAngularGateDecision(model, "G04", "APPROVE"));
     model = finishLive(applyAngularGateDecision(model, "G05", "APPROVE"));
     model = finishLive(applyAngularGateDecision(model, "G06", "APPROVE"));
+  }
 
-    // Keep the seeded action path focused on the strongest source-backed
-    // repair story: seal 11→20, then stop at the 20→21 G10 package.
+  if (id === "run-angular-action") {
+    // Keep the action path focused on the first source-grounded Angular 18 → 19 review.
+    model = finishLive(
+      applyAngularStageGateDecision(model, "G07", "APPROVE"),
+    );
+    model = finishLive(model);
+  }
+
+  if (id === "run-angular-recovery") {
+    // Preserve a later-stage recovery path for rollback/resume coverage.
     for (let stageIndex = 0; stageIndex < 9; stageIndex += 1) {
       model = finishLive(
         applyAngularStageGateDecision(model, "G07", "APPROVE"),

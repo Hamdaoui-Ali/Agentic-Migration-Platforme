@@ -1,5 +1,9 @@
 import { stableDisplayChecksum } from "../../../scenarios/runtime/checksum.ts";
 import { createAngularLiveExecution } from "./live-definitions.ts";
+import {
+  ANGULAR_MOVIES_NG19_REPAIR,
+  ANGULAR_MOVIES_NG19_REPAIR_DIFF,
+} from "../domain/demo-source.ts";
 import type { AngularRouteStep } from "../domain/types.ts";
 import type {
   AngularProvenGroup,
@@ -381,6 +385,69 @@ function reviewingRepairAttempts20To21(
   );
 }
 
+function sourceBackedRepairAttempts18To19(
+  run: AngularRunModel,
+): AngularRepairAttempt[] {
+  const stage = run.stageExecution;
+  if (
+    !stage ||
+    run.sourceProfile !== "ANGULAR_MOVIES" ||
+    stage.source !== 18 ||
+    stage.target !== 19
+  ) return [];
+
+  const checksum = (scope: string) =>
+    stableDisplayChecksum(`${run.id}:${stage.stageId}:${scope}`);
+
+  return [
+    {
+      id: `${stage.stageId}-repair-1`,
+      attempt: 1,
+      status: "READY_FOR_G10",
+      failureCategory: "SSR_COMMON_ENGINE_IMPORT",
+      failurePhase: "MAIN_REPAIR",
+      failureOwner: "MAIN_REPAIR_LLM",
+      proposalKind: "SOURCE_PATCH",
+      operation: "replace_text",
+      rationale:
+        `Repository ${ANGULAR_MOVIES_NG19_REPAIR.repository} records this exact Angular 18 → 19 correction in commit ${ANGULAR_MOVIES_NG19_REPAIR.targetCommit}: update the SSR CommonEngine import in ${ANGULAR_MOVIES_NG19_REPAIR.path} from @angular/ssr to @angular/ssr/node.`,
+      changedFiles: [ANGULAR_MOVIES_NG19_REPAIR.path],
+      diff: ANGULAR_MOVIES_NG19_REPAIR_DIFF,
+      reviewerVerdict: "ACCEPT",
+      causalResult: "PASS",
+      risk: "LOW",
+      proposer: {
+        role: "repair_proposer",
+        task: "repair_diagnosis",
+        status: "SUCCEEDED",
+      },
+      reviewer: {
+        role: "repair_reviewer",
+        task: "repair_review",
+        status: "SUCCEEDED",
+        decision: "ACCEPT",
+      },
+      validationTargets: ["build", "ssr", "browser_flow"],
+      failureEvidenceChecksum: checksum("repair-1:failure"),
+      proposalChecksum: checksum("repair-1:proposal"),
+      reviewChecksum: checksum("repair-1:review"),
+    },
+  ];
+}
+
+function reviewingRepairAttempts18To19(
+  run: AngularRunModel,
+): AngularRepairAttempt[] {
+  return sourceBackedRepairAttempts18To19(run).map((attempt) => ({
+    ...attempt,
+    status: "REVIEWING" as const,
+    proposer: undefined,
+    reviewer: undefined,
+    proposalChecksum: undefined,
+    reviewChecksum: undefined,
+  }));
+}
+
 function sourceGroundedRepairAttempts15To16(
   run: AngularRunModel,
 ): AngularRepairAttempt[] {
@@ -647,7 +714,11 @@ export function applyAngularStageGateDecision(
       liveExecution: createAngularLiveExecution(
         "STAGE_EXECUTION",
         runtimeStartedAtMs,
-        { source: stage.source, target: stage.target },
+        {
+          source: stage.source,
+          target: stage.target,
+          sourceProfile: run.sourceProfile,
+        },
       ),
     };
   }
@@ -673,7 +744,11 @@ export function applyAngularStageGateDecision(
       liveExecution: createAngularLiveExecution(
         "REPAIR_VALIDATION",
         runtimeStartedAtMs,
-        { source: stage.source, target: stage.target },
+        {
+          source: stage.source,
+          target: stage.target,
+          sourceProfile: run.sourceProfile,
+        },
       ),
     };
   }
@@ -719,8 +794,13 @@ export function completeAngularApprovedStageExecution(
   }
 
   const is15To16ToolingRepair = stage.source === 15 && stage.target === 16;
+  const is18To19ReferenceRepair =
+    run.sourceProfile === "ANGULAR_MOVIES" &&
+    stage.source === 18 &&
+    stage.target === 19;
   const is20To21ReferenceRepair = stage.source === 20 && stage.target === 21;
-  const shouldFail = is15To16ToolingRepair || is20To21ReferenceRepair;
+  const shouldFail =
+    is15To16ToolingRepair || is18To19ReferenceRepair || is20To21ReferenceRepair;
   const validation = shouldFail ? "FAILED" as const : "PASS" as const;
   let executed: AngularStageExecution = {
     ...stage,
@@ -737,10 +817,15 @@ export function completeAngularApprovedStageExecution(
             ...run,
             stageExecution: executed,
           })
-        : reviewingRepairAttempts20To21({
-            ...run,
-            stageExecution: executed,
-          }),
+        : is18To19ReferenceRepair
+          ? reviewingRepairAttempts18To19({
+              ...run,
+              stageExecution: executed,
+            })
+          : reviewingRepairAttempts20To21({
+              ...run,
+              stageExecution: executed,
+            }),
     };
     return {
       ...run,
@@ -749,11 +834,17 @@ export function completeAngularApprovedStageExecution(
       currentGate: null,
       currentAction: is15To16ToolingRepair
         ? "Main Repair LLM and Independent Reviewer are preparing the governed lint-tooling transition"
-        : "Main Repair LLM and Independent Reviewer are preparing the bounded source repair",
+        : is18To19ReferenceRepair
+          ? "Main Repair LLM and Independent Reviewer are preparing the source-grounded SSR import correction"
+          : "Main Repair LLM and Independent Reviewer are preparing the bounded source repair",
       liveExecution: createAngularLiveExecution(
         "REPAIR_REVIEW",
         Date.parse(now),
-        { source: stage.source, target: stage.target },
+        {
+          source: stage.source,
+          target: stage.target,
+          sourceProfile: run.sourceProfile,
+        },
       ),
       route: run.route.map((step) =>
         step.id === stage.stageId
@@ -768,10 +859,14 @@ export function completeAngularApprovedStageExecution(
           category: "FAILURE",
           title: is15To16ToolingRepair
             ? "Angular 15 → 16 lint-tooling incompatibility preserved"
-            : "Angular 20 → 21 validation failure preserved",
+            : is18To19ReferenceRepair
+              ? "Angular 18 → 19 SSR import incompatibility preserved"
+              : "Angular 20 → 21 validation failure preserved",
           summary: is15To16ToolingRepair
             ? "The failure evidence binds the legacy @angular-devkit/build-angular:tslint target from the Angular 11 CRUD source to Angular CLI 16.2.16, where that builder is no longer registered."
-            : "The source-backed reference path retains the missing Jest environment and legacy setup import failures before governed repair.",
+            : is18To19ReferenceRepair
+              ? `The source-backed ${ANGULAR_MOVIES_NG19_REPAIR.repository} path retains the CommonEngine import boundary that its Angular 19 update corrects in ${ANGULAR_MOVIES_NG19_REPAIR.path}.`
+              : "The source-backed reference path retains the missing Jest environment and legacy setup import failures before governed repair.",
           timestamp: now,
           checksum: stableDisplayChecksum(
             `${run.id}:${stage.stageId}:failure`,
@@ -813,9 +908,17 @@ export function completeAngularRepairReviewExecution(
   const stage = run.stageExecution;
   const is15To16ToolingRepair =
     stage?.source === 15 && stage.target === 16;
+  const is18To19ReferenceRepair =
+    run.sourceProfile === "ANGULAR_MOVIES" &&
+    stage?.source === 18 && stage.target === 19;
   const is20To21ReferenceRepair =
     stage?.source === 20 && stage.target === 21;
-  if (!stage || (!is15To16ToolingRepair && !is20To21ReferenceRepair)) {
+  if (
+    !stage ||
+    (!is15To16ToolingRepair &&
+      !is18To19ReferenceRepair &&
+      !is20To21ReferenceRepair)
+  ) {
     throw new Error("No governed Angular repair review is active.");
   }
 
@@ -824,7 +927,9 @@ export function completeAngularRepairReviewExecution(
     status: "ACTION_REQUIRED",
     repairAttempts: is15To16ToolingRepair
       ? sourceGroundedRepairAttempts15To16(run)
-      : sourceBackedRepairAttempts20To21(run),
+      : is18To19ReferenceRepair
+        ? sourceBackedRepairAttempts18To19(run)
+        : sourceBackedRepairAttempts20To21(run),
   };
   reviewed = unlockGate(reviewed, "G10");
 
@@ -834,7 +939,9 @@ export function completeAngularRepairReviewExecution(
     currentGate: "G10",
     currentAction: is15To16ToolingRepair
       ? "Review lint-tooling transition, Independent Reviewer verdict, and candidate diff"
-      : "Review Main Repair LLM proposal, Independent Reviewer verdict, and candidate diff",
+      : is18To19ReferenceRepair
+        ? "Review source-grounded SSR import correction, Independent Reviewer verdict, and candidate diff"
+        : "Review Main Repair LLM proposal, Independent Reviewer verdict, and candidate diff",
     liveExecution: undefined,
     stageExecution: reviewed,
     evidence: [
@@ -844,10 +951,14 @@ export function completeAngularRepairReviewExecution(
         category: "REPAIR",
         title: is15To16ToolingRepair
           ? "Angular 15 → 16 tooling repair reviewed"
-          : "Main Repair LLM proposal reviewed",
+          : is18To19ReferenceRepair
+            ? "Angular 18 → 19 source repair reviewed"
+            : "Main Repair LLM proposal reviewed",
         summary: is15To16ToolingRepair
           ? "The reviewed tooling repair replaces the unavailable TSLint builder with angular-eslint lint authority, preserves lint validation, and requires G10 human approval before package/config mutation."
-          : "The request-changes child repair targets setup-jest.ts with a preimage-bound replace_text operation; the Independent Reviewer accepted it and G10 now requires human approval before apply.",
+          : is18To19ReferenceRepair
+            ? `The reviewed source patch updates ${ANGULAR_MOVIES_NG19_REPAIR.path} using the repository's recorded Angular 19 correction; G10 now requires human approval before apply.`
+            : "The request-changes child repair targets setup-jest.ts with a preimage-bound replace_text operation; the Independent Reviewer accepted it and G10 now requires human approval before apply.",
         timestamp: now,
         checksum: stableDisplayChecksum(
           `${run.id}:${stage.stageId}:repair-proposal`,
@@ -966,7 +1077,11 @@ function sealAndAdvance(
     liveExecution: createAngularLiveExecution(
       "STAGE_PREPARATION",
       runtimeStartedAtMs,
-      { source: next.source, target: next.target },
+      {
+        source: next.source,
+        target: next.target,
+        sourceProfile: run.sourceProfile,
+      },
     ),
   };
 }

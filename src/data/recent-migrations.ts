@@ -10,10 +10,10 @@ export interface RecentMigration {
 
 export const recentMigrations: RecentMigration[] = [
   {
-    id: "ang-crud-action",
-    name: "Angular 11 CRUD Example",
+    id: "ang-movies-action",
+    name: "Angular Movies",
     stack: "Angular",
-    route: "Angular 11 → 21",
+    route: "Angular 18 → 21",
     status: "ACTION_REQUIRED",
     href: "/angular/migrations/run-angular-action",
     updated: "2 min ago",

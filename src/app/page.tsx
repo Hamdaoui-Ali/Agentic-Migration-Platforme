@@ -39,7 +39,7 @@ export default function Home() {
                 eyebrow="Frontend"
                 title="Angular Migration"
                 description="Govern adjacent-major Angular modernization with certified runtime binding, evidence-backed gates, causal repair, validation, promotion, and sealed stage delivery."
-                meta={["Angular 11 → 21", "Node · npm", "TypeScript · Angular CLI"]}
+                meta={["Angular 18 → 21", "Node · npm", "TypeScript · Angular CLI"]}
                 href="/angular/migrations/new"
                 action="Start Angular migration"
                 icon={<Braces aria-hidden="true" className="h-7 w-7" strokeWidth={1.8} />}

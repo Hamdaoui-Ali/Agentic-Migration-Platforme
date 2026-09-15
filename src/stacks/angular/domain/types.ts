@@ -1,5 +1,6 @@
 export const ANGULAR_MAJORS = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21] as const;
 export type AngularMajor = (typeof ANGULAR_MAJORS)[number];
+export type AngularSourceProfileId = "ANGULAR11_CRUD" | "ANGULAR_MOVIES" | "GENERIC";
 
 export type AngularGateId =
   | "G01" | "G02" | "G03" | "G04" | "G05" | "G06"
@@ -65,6 +66,7 @@ export interface AngularPreflight {
   id: string;
   runName: string;
   sourcePath: string;
+  sourceProfile: AngularSourceProfileId;
   outputParent: string;
   sourceMajor: AngularMajor;
   targetMajor: AngularMajor;
@@ -84,6 +86,7 @@ export interface AngularPreflight {
 export interface AngularRunSeed {
   id: string;
   name: string;
+  sourceProfile: AngularSourceProfileId;
   sourceMajor: AngularMajor;
   targetMajor: AngularMajor;
   route: AngularRouteStep[];

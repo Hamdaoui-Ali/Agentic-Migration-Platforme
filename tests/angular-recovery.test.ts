@@ -44,7 +44,7 @@ function governedRun() {
 }
 
 function repairRun() {
-  return seedAngularRun("run-angular-action");
+  return seedAngularRun("run-angular-recovery");
 }
 
 test("baseline command evidence preserves authorization, result, and logs", () => {

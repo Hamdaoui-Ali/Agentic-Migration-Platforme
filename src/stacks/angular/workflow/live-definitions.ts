@@ -1,10 +1,21 @@
 import { paceLiveExecution } from "../../../domain/live-execution.ts";
+import type { LiveExecutionStep } from "../../../domain/live-execution.ts";
 import type {
   AngularLiveExecution,
   AngularLiveExecutionKind,
 } from "../domain/run-types.ts";
-import type { AngularMajor } from "../domain/types.ts";
-import { ANGULAR11_CRUD_SOURCE } from "../domain/demo-source.ts";
+import type { AngularMajor, AngularSourceProfileId } from "../domain/types.ts";
+import {
+  ANGULAR11_CRUD_SOURCE,
+  ANGULAR_MOVIES_NG19_REPAIR,
+  ANGULAR_MOVIES_SOURCE,
+} from "../domain/demo-source.ts";
+
+type AngularLiveContext = {
+  source?: AngularMajor;
+  target?: AngularMajor;
+  sourceProfile?: AngularSourceProfileId;
+};
 
 function id(kind: AngularLiveExecutionKind, startedAtMs: number) {
   return "angular-" + kind.toLowerCase().replaceAll("_", "-") + "-" + startedAtMs;
@@ -13,12 +24,12 @@ function id(kind: AngularLiveExecutionKind, startedAtMs: number) {
 export function createAngularLiveExecution(
   kind: AngularLiveExecutionKind,
   startedAtMs: number,
-  context: {
-    source?: AngularMajor;
-    target?: AngularMajor;
-  } = {},
+  context: AngularLiveContext = {},
 ): AngularLiveExecution {
-  const raw = createAngularLiveExecutionRaw(kind, startedAtMs, context);
+  const raw =
+    context.sourceProfile === "ANGULAR_MOVIES"
+      ? createAngularMoviesLiveExecutionRaw(kind, startedAtMs, context)
+      : createAngularLiveExecutionRaw(kind, startedAtMs, context);
   const minimumDurationMs =
     kind === "PLANNING"
       ? 45_000
@@ -30,13 +41,661 @@ export function createAngularLiveExecution(
   return paceLiveExecution(raw, minimumDurationMs);
 }
 
+function movieStep(
+  id: string,
+  label: string,
+  node: string,
+  detail: string,
+  durationMs: number,
+  kind: LiveExecutionStep["kind"],
+  logs: string[],
+  extras: Partial<Pick<LiveExecutionStep, "command" | "provider" | "deployment" | "role">> = {},
+): LiveExecutionStep {
+  return { id, label, node, detail, durationMs, kind, logs, ...extras };
+}
+
+function createAngularMoviesLiveExecutionRaw(
+  kind: AngularLiveExecutionKind,
+  startedAtMs: number,
+  context: AngularLiveContext,
+): AngularLiveExecution {
+  const source = context.source ?? 18;
+  const target = context.target ?? 21;
+  const routeLabel = `Angular ${source} -> ${target}`;
+
+  const phaseSteps: Record<AngularLiveExecutionKind, LiveExecutionStep[]> = {
+    BASELINE: [
+      movieStep(
+        "movies-baseline-identity",
+        "Bind source repository identity",
+        "baseline.source_identity",
+        "Bind the approved tastejs/angular-movies revision and immutable source fingerprint.",
+        1500,
+        "SYSTEM",
+        [
+          `Repository: ${ANGULAR_MOVIES_SOURCE.repository}`,
+          `Revision: ${ANGULAR_MOVIES_SOURCE.revision}`,
+          `Source application: ${ANGULAR_MOVIES_SOURCE.applicationName}`,
+          "Immutable source fingerprint recorded.",
+        ],
+      ),
+      movieStep(
+        "movies-baseline-manifest",
+        "Inspect Nx and Angular manifests",
+        "baseline.manifest_inspection",
+        "Read package.json, project.json, TypeScript configuration, and lockfile authority.",
+        1700,
+        "SYSTEM",
+        [
+          "Angular 18.2.14 · Angular CLI 18.2.21",
+          "build-angular 18.2.21 · TypeScript 5.5.4",
+          "RxJS 7.8.2 · zone.js 0.14.10",
+          "Nx workspace: 1 movies project · 6 lazy feature modules",
+          `builder=${ANGULAR_MOVIES_SOURCE.builder}`,
+          "package-lock.json authority confirmed.",
+        ],
+      ),
+      movieStep(
+        "movies-baseline-install",
+        "Clean lockfile install",
+        "command.baseline_install",
+        "Install exactly from the committed package-lock.json.",
+        2600,
+        "COMMAND",
+        [
+          "$ npm ci",
+          "Lockfile authority: package-lock.json",
+          "100 manifest package entries resolved.",
+          "Angular 18 dependency tree materialized.",
+          "exit code 0",
+        ],
+        { command: "npm ci" },
+      ),
+      movieStep(
+        "movies-baseline-build",
+        "Build the movies application",
+        "command.baseline_build",
+        "Build the Nx movies project with its application builder and SSR entrypoint.",
+        2800,
+        "COMMAND",
+        [
+          "$ npx nx build movies",
+          `Builder: ${ANGULAR_MOVIES_SOURCE.builder}`,
+          "Browser bundle and server entrypoint compiled.",
+          "Prerender and service-worker configuration preserved.",
+          "exit code 0",
+        ],
+        { command: "npx nx build movies" },
+      ),
+      movieStep(
+        "movies-baseline-tests",
+        "Run Jest and browser-flow baseline checks",
+        "command.baseline_test",
+        "Freeze unit, SSR, and browser-flow evidence before G03 qualification.",
+        2500,
+        "COMMAND",
+        [
+          "$ npx nx test movies --runInBand",
+          "Jest 29 + jest-preset-angular configured.",
+          "SSR route render and browser-flow checks registered.",
+          "Push-based user-flow + Puppeteer authority recorded.",
+          "Baseline test evidence finalized.",
+        ],
+        { command: "npx nx test movies --runInBand" },
+      ),
+      movieStep(
+        "movies-baseline-lint",
+        "Run Angular ESLint baseline",
+        "command.baseline_lint",
+        "Run the source lint authority exactly as configured by Angular 18.",
+        1800,
+        "COMMAND",
+        [
+          "$ npx nx lint movies",
+          "Angular ESLint 18.4 configuration loaded.",
+          "Standalone templates and TypeScript source included.",
+          "Baseline lint evidence finalized.",
+        ],
+        { command: "npx nx lint movies" },
+      ),
+      movieStep(
+        "movies-baseline-qualification",
+        "Qualify baseline for G03",
+        "baseline.qualification.complete",
+        "Classify SSR, browser-flow, and dependency evidence for human baseline acceptance.",
+        1400,
+        "SYSTEM",
+        [
+          "Baseline reproducibility: qualified.",
+          "SSR and browser-flow parity evidence attached.",
+          "G03 evidence package finalized.",
+        ],
+      ),
+    ],
+    ANALYSIS: [
+      movieStep(
+        "movies-analysis-inputs",
+        "Freeze deterministic analysis inputs",
+        "analysis.input_manifest",
+        "Bind the accepted baseline, source revision, manifests, and route evidence.",
+        1000,
+        "SYSTEM",
+        [
+          `Binding repository revision ${ANGULAR_MOVIES_SOURCE.revision}`,
+          "Accepted G03 baseline evidence attached.",
+          "package.json · project.json · tsconfig.json registered.",
+          "Analysis input manifest checksum finalized.",
+        ],
+      ),
+      movieStep(
+        "movies-analysis-topology",
+        "Scan Nx and application topology",
+        "analysis.topology_scan",
+        "Classify the standalone application, lazy route boundaries, SSR entrypoint, and service-worker target.",
+        2400,
+        "SYSTEM",
+        [
+          "Nx project: movies",
+          "Standalone Angular application detected.",
+          "Lazy feature boundaries: movie · person · account",
+          "SSR server entry: projects/movies/server.ts",
+          "Service worker and prerender targets detected.",
+        ],
+      ),
+      movieStep(
+        "movies-analysis-routes",
+        "Extract route and browser-flow contracts",
+        "analysis.route_scan",
+        "Map parameterized routes that must remain equivalent across each adjacent-major stage.",
+        2300,
+        "SYSTEM",
+        ANGULAR_MOVIES_SOURCE.routes.map((route) => `Route ${route} registered.`),
+      ),
+      movieStep(
+        "movies-analysis-ssr",
+        "Inspect SSR and hydration behavior",
+        "analysis.ssr_scan",
+        "Inspect CommonEngine, server rendering, prerender, and browser hydration boundaries.",
+        2300,
+        "SYSTEM",
+        [
+          "CommonEngine imported from @angular/ssr in the source revision.",
+          "SSR server entrypoint is projects/movies/server.ts.",
+          "Angular 19 source update records @angular/ssr/node as the corrected import.",
+          "SSR and browser-flow parity checks registered.",
+        ],
+      ),
+      movieStep(
+        "movies-analysis-tooling",
+        "Inspect dependency and test authorities",
+        "analysis.tooling_scan",
+        "Classify Nx, RxAngular, Angular ESLint, Jest, and Puppeteer evidence for governed transitions.",
+        1800,
+        "SYSTEM",
+        [
+          "84 non-Angular manifest entries detected.",
+          "RxAngular state and template primitives detected.",
+          "Jest 29 + jest-preset-angular authority detected.",
+          "Push-based user-flow + Puppeteer browser authority detected.",
+          "package-lock.json remains authoritative.",
+        ],
+      ),
+      movieStep(
+        "movies-analysis-proposer",
+        "Analysis Proposer",
+        "analysis.phase_proposer",
+        "Interpret repository evidence and produce structured migration findings.",
+        3200,
+        "LLM",
+        [
+          "Azure AI Foundry invocation started.",
+          "role=phase_proposer deployment=gpt-5-mini",
+          "Repository evidence: Nx · SSR · routes · browser-flow · dependencies.",
+          "Source-grounded Angular 19 SSR repair finding generated.",
+          "Structured analysis response received.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "gpt-5-mini",
+          role: "phase_proposer",
+        },
+      ),
+      movieStep(
+        "movies-analysis-reviewer",
+        "Independent Phase Reviewer",
+        "analysis.phase_reviewer",
+        "Review findings for source fidelity, unsupported claims, and evidence coverage.",
+        3200,
+        "REVIEWER",
+        [
+          "Azure AI Foundry reviewer invocation started.",
+          "role=phase_reviewer deployment=Llama-3.3-70B-Instruct",
+          "Verified Angular 18.2.14 / CLI 18.2.21 source identity.",
+          "Verified SSR import correction against repository history.",
+          "Independent review accepted.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "Llama-3.3-70B-Instruct",
+          role: "phase_reviewer",
+        },
+      ),
+    ],
+    FEASIBILITY: [
+      movieStep(
+        "movies-feasibility-versions",
+        "Resolve Angular compatibility cohort",
+        "feasibility.version_cohort",
+        "Resolve exact Angular, CLI, TypeScript, RxJS, and Node values for the next adjacent stage.",
+        2200,
+        "SYSTEM",
+        [
+          "Source cohort: Angular 18.2.14 · CLI 18.2.21",
+          "Next cohort: Angular 19.2.25 · CLI 19.2.27",
+          "TypeScript 5.8.3 and Node 22.23.1 target values recorded.",
+          "Compatibility catalogue: catalog-v4",
+        ],
+      ),
+      movieStep(
+        "movies-feasibility-dependencies",
+        "Check Nx, RxAngular, and SSR dependencies",
+        "feasibility.third_party",
+        "Check third-party package compatibility without force resolution.",
+        2400,
+        "SYSTEM",
+        [
+          "84 non-Angular entries scheduled for stage resolution.",
+          "Nx and RxAngular compatibility watch registered.",
+          "@angular/ssr import boundary marked for Angular 19 repair review.",
+          "Preserve-first dependency policy remains active.",
+        ],
+      ),
+      movieStep(
+        "movies-feasibility-runtime",
+        "Certify runtime and browser capabilities",
+        "feasibility.runtime",
+        "Verify the certified runtime, server rendering, and browser-flow execution profile.",
+        2100,
+        "SYSTEM",
+        [
+          "Node 22.23.1 runtime profile available.",
+          "SSR server execution profile available.",
+          "Puppeteer browser-flow profile available.",
+          "Runtime compatibility: supported with governed repair boundary.",
+        ],
+      ),
+      movieStep(
+        "movies-feasibility-proposer",
+        "Feasibility Proposer and Reviewer",
+        "feasibility.phase_review",
+        "Bind compatibility warnings and the bounded repair boundary for G05 review.",
+        2600,
+        "REVIEWER",
+        [
+          "Azure AI Foundry feasibility review completed.",
+          "SSR import correction classified as a bounded source repair.",
+          "No force dependency resolution proposed.",
+          "G05 evidence package finalized.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "Llama-3.3-70B-Instruct",
+          role: "phase_reviewer",
+        },
+      ),
+    ],
+    PLANNING: [
+      movieStep(
+        "movies-planning-route",
+        "Construct adjacent-major route",
+        "planning.route",
+        "Construct the requested route from Angular 18 through Angular 21 without skipping majors.",
+        1900,
+        "SYSTEM",
+        ["Route: Angular 18 -> 19 -> 20 -> 21.", "Every stage requires its own human gate."],
+      ),
+      movieStep(
+        "movies-planning-stage",
+        "Resolve exact first-stage contract",
+        "planning.stage_contract",
+        "Resolve the Angular 18 -> 19 cohort, runtime, builder, commands, and SSR validation targets.",
+        2200,
+        "SYSTEM",
+        [
+          "First stage: Angular 18.2.14 -> 19.2.25",
+          `Builder: ${ANGULAR_MOVIES_SOURCE.builder}`,
+          "Command policy: structured-registry-v1",
+          "Validation: build · SSR · browser-flow",
+        ],
+      ),
+      movieStep(
+        "movies-planning-proposer",
+        "Planning Proposer",
+        "planning.phase_proposer",
+        "Produce the deterministic adjacent-major plan and its bounded repair policy.",
+        3000,
+        "LLM",
+        [
+          "Azure AI Foundry invocation started.",
+          "Source profile: tastejs/angular-movies.",
+          "Real repository correction bound to Angular 18 -> 19.",
+          "Plan response received.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "gpt-5-mini",
+          role: "phase_proposer",
+        },
+      ),
+      movieStep(
+        "movies-planning-reviewer",
+        "Independent Planning Reviewer",
+        "planning.phase_reviewer",
+        "Review the route, exact cohort, source profile, and repair policy before G06.",
+        3000,
+        "REVIEWER",
+        [
+          "Verified source profile and Angular 18 -> 21 route.",
+          "Verified Angular 18 -> 19 SSR repair lineage.",
+          "Verified human approval remains required at G10.",
+          "Independent planning review accepted.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "Llama-3.3-70B-Instruct",
+          role: "phase_reviewer",
+        },
+      ),
+    ],
+    STAGE_PREPARATION: [
+      movieStep(
+        "movies-stage-runtime",
+        "Resolve certified stage runtime",
+        "stage.runtime_resolution",
+        `Resolve the certified runtime for ${routeLabel}.`,
+        1800,
+        "SYSTEM",
+        [
+          `Runtime profile: factory-runtime-certified-${source}-${target}`,
+          "Resolution: PASS",
+          "Certification: CERTIFIED",
+          "Dependency preflight: PASS",
+        ],
+      ),
+      movieStep(
+        "movies-stage-source",
+        "Bind previous sealed output",
+        "stage.source_binding",
+        "Bind the previous sealed stage as the only transformation input.",
+        1800,
+        "SYSTEM",
+        [
+          `Source stage: Angular ${source}`,
+          `Target stage: Angular ${target}`,
+          "Previous sealed output fingerprint accepted.",
+        ],
+      ),
+      movieStep(
+        "movies-stage-contract",
+        "Prepare PROVEN stage contract",
+        "stage.contract",
+        "Prepare discovery, dependency, migration, target-proof, and validation groups.",
+        1800,
+        "SYSTEM",
+        [
+          "Source proof and target proof groups prepared.",
+          "SSR and browser-flow validation targets attached.",
+          "G07 package ready for review.",
+        ],
+      ),
+    ],
+    STAGE_EXECUTION: [
+      movieStep(
+        "movies-stage-source-proof",
+        "Run source proof",
+        "proven.source_proof",
+        `Verify the sealed Angular ${source} source before transforming to Angular ${target}.`,
+        1800,
+        "SYSTEM",
+        [
+          `Repository: ${ANGULAR_MOVIES_SOURCE.repository}`,
+          `Source revision: ${ANGULAR_MOVIES_SOURCE.revision}`,
+          "Source lock authority and build evidence verified.",
+        ],
+      ),
+      movieStep(
+        "movies-stage-discovery",
+        "Run migration discovery",
+        "proven.discovery",
+        "Generate disposable discovery evidence for the adjacent Angular major.",
+        2000,
+        "SYSTEM",
+        [
+          `Discovering Angular ${target} migration changes...`,
+          "SSR, standalone, Nx, and browser-flow checks registered.",
+          "Discovery evidence frozen.",
+        ],
+      ),
+      movieStep(
+        "movies-stage-dependencies",
+        "Resolve target dependency cohort",
+        "proven.dependency_resolution",
+        "Resolve the target package cohort from the previous sealed output.",
+        2300,
+        "COMMAND",
+        [
+          `Resolving Angular ${target} package cohort...`,
+          "Preserve-first lock resolution applied.",
+          "No force resolution used.",
+        ],
+        { command: "structured dependency registry" },
+      ),
+      movieStep(
+        "movies-stage-transform",
+        "Apply Angular migration",
+        "proven.migration",
+        "Materialize the target stage with the governed transformer runtime.",
+        2300,
+        "COMMAND",
+        [
+          `Materializing Angular ${target} candidate...`,
+          "Migration ledger recorded.",
+          "Target fingerprint bound.",
+        ],
+        { command: `governed angular ${source} to ${target} transformer` },
+      ),
+      movieStep(
+        "movies-stage-target-proof",
+        "Run target proof",
+        "proven.target_proof",
+        "Verify target versions, dependency authority, and candidate identity.",
+        1900,
+        "SYSTEM",
+        [
+          `Angular ${target} version proof passed.`,
+          "Dependency authority comparison passed.",
+          "Candidate identity frozen.",
+        ],
+      ),
+      movieStep(
+        "movies-stage-validation",
+        "Run clean validation",
+        "proven.validation",
+        "Build, render, and exercise the target candidate before stage completion.",
+        2600,
+        "COMMAND",
+        [
+          "Clean validation workspace created.",
+          "Build completed.",
+          "SSR route render started.",
+          "Browser-flow validation started.",
+        ],
+        { command: "build + SSR + browser-flow validation" },
+      ),
+      movieStep(
+        "movies-stage-review",
+        "Aggregate validation evidence",
+        "proven.validation.aggregate",
+        "Aggregate diagnostics and either open the repair boundary or unlock completion.",
+        1800,
+        "REVIEWER",
+        [
+          `Angular ${target} candidate validation completed.`,
+          "Diagnostic delta attached to the stage package.",
+          "Human review boundary determined.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "Llama-3.3-70B-Instruct",
+          role: "phase_reviewer",
+        },
+      ),
+    ],
+    REPAIR_REVIEW: [
+      movieStep(
+        "movies-repair-failure",
+        "Bind failed SSR validation",
+        "repair.failure_evidence",
+        "Bind the failed Angular 18 to 19 SSR import check to the repair package.",
+        1800,
+        "SYSTEM",
+        [
+          `Failure owner: ${ANGULAR_MOVIES_NG19_REPAIR.path}`,
+          "Failure category: SSR_COMMON_ENGINE_IMPORT",
+          "Validation stopped at the G10 repair boundary.",
+        ],
+      ),
+      movieStep(
+        "movies-repair-proposer",
+        "Main Repair LLM",
+        "repair.phase_proposer",
+        "Propose the bounded source patch using the repository's recorded Angular 19 correction.",
+        2500,
+        "LLM",
+        [
+          "Azure AI Foundry invocation started.",
+          `Repository correction: ${ANGULAR_MOVIES_NG19_REPAIR.targetCommit}`,
+          `Candidate file: ${ANGULAR_MOVIES_NG19_REPAIR.path}`,
+          "Source patch proposal received.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "gpt-5-mini",
+          role: "repair_proposer",
+        },
+      ),
+      movieStep(
+        "movies-repair-reviewer",
+        "Independent Repair Reviewer",
+        "repair.phase_reviewer",
+        "Review the diff preimage, causal category, source reference, and validation targets.",
+        2500,
+        "REVIEWER",
+        [
+          "Azure AI Foundry reviewer invocation started.",
+          "Diff preimage matches the source revision.",
+          "Causal kind: SOURCE_PATCH",
+          "Independent Reviewer verdict: ACCEPT",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "Llama-3.3-70B-Instruct",
+          role: "repair_reviewer",
+        },
+      ),
+      movieStep(
+        "movies-repair-package",
+        "Prepare G10 repair package",
+        "repair.g10_package",
+        "Bind the real repository diff, source references, and bounded validation targets for human choice.",
+        1700,
+        "SYSTEM",
+        [
+          "Changed file: projects/movies/server.ts",
+          "Validation: build · SSR · browser-flow",
+          "G10 package ready: accept, ask AI again, or use manual override.",
+        ],
+      ),
+    ],
+    REPAIR_VALIDATION: [
+      movieStep(
+        "movies-repair-apply",
+        "Apply approved source patch",
+        "repair.apply",
+        `Apply the approved bounded replace_text operation to ${ANGULAR_MOVIES_NG19_REPAIR.path}.`,
+        1800,
+        "COMMAND",
+        [
+          `Applying source patch to ${ANGULAR_MOVIES_NG19_REPAIR.path}...`,
+          "Preimage matched.",
+          "Patch applied without changing dependency authority.",
+        ],
+        { command: "governed replace_text" },
+      ),
+      movieStep(
+        "movies-repair-build",
+        "Rebuild Angular 19 candidate",
+        "repair.validation.build",
+        "Build the repaired candidate and confirm the SSR server entry compiles.",
+        2400,
+        "COMMAND",
+        [
+          "$ npx nx build movies",
+          "@angular/ssr/node import resolved.",
+          "Browser and server bundles generated.",
+          "Build exit code 0.",
+        ],
+        { command: "npx nx build movies" },
+      ),
+      movieStep(
+        "movies-repair-ssr",
+        "Validate SSR and browser flow",
+        "repair.validation.runtime",
+        "Render representative routes and run browser-flow checks against the repaired candidate.",
+        2600,
+        "COMMAND",
+        [
+          "SSR server started.",
+          "Parameterized list/detail routes rendered.",
+          "Account and page-not-found flows verified.",
+          "Puppeteer browser-flow validation passed.",
+        ],
+        { command: "SSR + Puppeteer validation" },
+      ),
+      movieStep(
+        "movies-repair-aggregate",
+        "Aggregate repaired validation",
+        "repair.validation.aggregate",
+        "Freeze repaired candidate evidence before G11 review.",
+        1700,
+        "REVIEWER",
+        [
+          "Source patch checksum verified.",
+          "Build, SSR, and browser-flow targets passed.",
+          "G11 validation package finalized.",
+        ],
+        {
+          provider: "azure_foundry",
+          deployment: "Llama-3.3-70B-Instruct",
+          role: "phase_reviewer",
+        },
+      ),
+    ],
+  };
+
+  return {
+    id: id(kind, startedAtMs),
+    kind,
+    status: "RUNNING",
+    startedAtMs,
+    steps: phaseSteps[kind],
+  };
+}
+
 function createAngularLiveExecutionRaw(
   kind: AngularLiveExecutionKind,
   startedAtMs: number,
-  context: {
-    source?: AngularMajor;
-    target?: AngularMajor;
-  } = {},
+  context: AngularLiveContext = {},
 ): AngularLiveExecution {
   const source = context.source ?? 11;
   const target = context.target ?? 12;

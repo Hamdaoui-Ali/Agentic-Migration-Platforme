@@ -1,5 +1,8 @@
 import { stableDisplayChecksum } from "../../../scenarios/runtime/checksum.ts";
-import { ANGULAR11_CRUD_SOURCE } from "../domain/demo-source.ts";
+import {
+  ANGULAR11_CRUD_SOURCE,
+  ANGULAR_MOVIES_SOURCE,
+} from "../domain/demo-source.ts";
 import {
   ANGULAR_MAJORS,
   type AngularG01Decision,
@@ -7,6 +10,8 @@ import {
   type AngularPreflight,
   type AngularRouteStep,
   type AngularRunSeed,
+  type AngularSourceProfileId,
+  type AngularSourceAnalysis,
 } from "../domain/types.ts";
 
 export interface PrepareAngularInput {
@@ -54,21 +59,81 @@ function slugify(value: string): string {
   return slug || "migration";
 }
 
+function identifySourceProfile(input: PrepareAngularInput): AngularSourceProfileId {
+  const path = input.sourcePath.toLowerCase();
+  if (input.sourceMajor === 11 && path.includes("angular-11-crud-example")) {
+    return "ANGULAR11_CRUD";
+  }
+  if (input.sourceMajor === 18 && path.includes("angular-movies")) {
+    return "ANGULAR_MOVIES";
+  }
+  return "GENERIC";
+}
+
+function sourceAnalysisFor(
+  profileId: AngularSourceProfileId,
+  sourceMajor: AngularMajor,
+): AngularSourceAnalysis {
+  if (profileId === "GENERIC") {
+    return {
+      detectedVersion: `${sourceMajor}.x`,
+      packageManager: "npm",
+      workspace: "Angular CLI application",
+      projects: 1,
+      builder: "@angular-devkit/build-angular",
+      lockfile: "package-lock.json",
+      dependencyCount: 0,
+      thirdPartyPackages: 0,
+      confidence: "MEDIUM",
+      applicationName: "angular-application",
+      angularCliVersion: `${sourceMajor}.x`,
+      buildAngularVersion: "resolved during baseline",
+      typescriptVersion: "resolved during baseline",
+      rxjsVersion: "resolved during baseline",
+      zoneJsVersion: "resolved during baseline",
+      lazyFeatureModules: 0,
+      crudOperations: 0,
+    };
+  }
+
+  const profile =
+    profileId === "ANGULAR11_CRUD" ? ANGULAR11_CRUD_SOURCE : ANGULAR_MOVIES_SOURCE;
+  return {
+    detectedVersion: profile.angular,
+    packageManager: "npm",
+    workspace: "Angular CLI application",
+    projects: profile.projects,
+    builder: profile.builder,
+    lockfile: profile.lockfile,
+    dependencyCount: profile.packageEntries,
+    thirdPartyPackages: profile.thirdPartyEntries,
+    confidence: "HIGH",
+    applicationName: profile.applicationName,
+    angularCliVersion: profile.angularCli,
+    buildAngularVersion: profile.buildAngular,
+    typescriptVersion: profile.typescript,
+    rxjsVersion: profile.rxjs,
+    zoneJsVersion: profile.zoneJs,
+    lazyFeatureModules: profile.lazyFeatureModules,
+    crudOperations: profile.crudOperations,
+  };
+}
+
 export function prepareAngularPreflight(
   input: PrepareAngularInput,
   now = "2026-08-31T19:30:00+01:00",
 ): AngularPreflight {
   const route = computeAngularRoute(input.sourceMajor, input.targetMajor);
   const blocked = input.sourcePath.toLowerCase().includes("blocked");
-  const isCrudDemo =
-    input.sourceMajor === 11 &&
-    input.sourcePath.toLowerCase().includes("angular-11-crud-example");
+  const sourceProfile = identifySourceProfile(input);
   const warnings =
     input.targetMajor - input.sourceMajor >= 3
       ? [
-          isCrudDemo
+          sourceProfile === "ANGULAR11_CRUD"
             ? "TSLint/Codelyzer and Protractor require governed tooling transitions on later Angular majors."
-            : "One or more source tooling dependencies require migration review before a later stage.",
+            : sourceProfile === "ANGULAR_MOVIES"
+              ? "Angular Movies SSR, Nx, and browser-flow tooling require governed validation at each adjacent major."
+              : "One or more source tooling dependencies require migration review before a later stage.",
         ]
       : [];
   const blockers = blocked ? ["Source path failed production-readiness validation."] : [];
@@ -81,6 +146,7 @@ export function prepareAngularPreflight(
     id,
     runName: input.runName,
     sourcePath: input.sourcePath,
+    sourceProfile,
     outputParent: input.outputParent,
     sourceMajor: input.sourceMajor,
     targetMajor: input.targetMajor,
@@ -97,45 +163,7 @@ export function prepareAngularPreflight(
       { id: "catalogue", label: "Compatibility catalogue", value: "Certified", status: "READY" },
       { id: "llm", label: "LLM readiness", value: "Available", status: "READY" },
     ],
-    sourceAnalysis: isCrudDemo
-      ? {
-          detectedVersion: ANGULAR11_CRUD_SOURCE.angular,
-          packageManager: "npm",
-          workspace: "Angular CLI application",
-          projects: ANGULAR11_CRUD_SOURCE.projects,
-          builder: ANGULAR11_CRUD_SOURCE.builder,
-          lockfile: ANGULAR11_CRUD_SOURCE.lockfile,
-          dependencyCount: ANGULAR11_CRUD_SOURCE.packageEntries,
-          thirdPartyPackages: ANGULAR11_CRUD_SOURCE.thirdPartyEntries,
-          confidence: "HIGH",
-          applicationName: ANGULAR11_CRUD_SOURCE.applicationName,
-          angularCliVersion: ANGULAR11_CRUD_SOURCE.angularCli,
-          buildAngularVersion: ANGULAR11_CRUD_SOURCE.buildAngular,
-          typescriptVersion: ANGULAR11_CRUD_SOURCE.typescript,
-          rxjsVersion: ANGULAR11_CRUD_SOURCE.rxjs,
-          zoneJsVersion: ANGULAR11_CRUD_SOURCE.zoneJs,
-          lazyFeatureModules: ANGULAR11_CRUD_SOURCE.lazyFeatureModules,
-          crudOperations: ANGULAR11_CRUD_SOURCE.crudOperations,
-        }
-      : {
-          detectedVersion: `${input.sourceMajor}.x`,
-          packageManager: "npm",
-          workspace: "Angular CLI application",
-          projects: 1,
-          builder: "@angular-devkit/build-angular",
-          lockfile: "package-lock.json",
-          dependencyCount: 0,
-          thirdPartyPackages: 0,
-          confidence: "MEDIUM",
-          applicationName: "angular-application",
-          angularCliVersion: `${input.sourceMajor}.x`,
-          buildAngularVersion: "resolved during baseline",
-          typescriptVersion: "resolved during baseline",
-          rxjsVersion: "resolved during baseline",
-          zoneJsVersion: "resolved during baseline",
-          lazyFeatureModules: 0,
-          crudOperations: 0,
-        },
+    sourceAnalysis: sourceAnalysisFor(sourceProfile, input.sourceMajor),
     evidence: [
       {
         id: `${id}-paths`,
@@ -151,9 +179,12 @@ export function prepareAngularPreflight(
         id: `${id}-source`,
         category: "SOURCE",
         title: "Source analysis",
-        summary: isCrudDemo
-          ? `Angular ${ANGULAR11_CRUD_SOURCE.angular} application ${ANGULAR11_CRUD_SOURCE.applicationName} detected with package-lock authority.`
-          : `Angular ${input.sourceMajor} workspace detected with package-lock authority.`,
+        summary:
+          sourceProfile === "ANGULAR11_CRUD"
+            ? `Angular ${ANGULAR11_CRUD_SOURCE.angular} application ${ANGULAR11_CRUD_SOURCE.applicationName} detected with package-lock authority.`
+            : sourceProfile === "ANGULAR_MOVIES"
+              ? `Angular ${ANGULAR_MOVIES_SOURCE.angular} application ${ANGULAR_MOVIES_SOURCE.applicationName} detected with package-lock authority.`
+              : `Angular ${input.sourceMajor} workspace detected with package-lock authority.`,
         checksum: stableDisplayChecksum(`${checksum}:source`),
         timestamp: now,
       },
@@ -232,6 +263,7 @@ export function createRunFromApprovedPreflight(
   return {
     id: `run-${slugify(preflight.runName)}-${preflight.sourceMajor}-${preflight.targetMajor}`,
     name: preflight.runName,
+    sourceProfile: preflight.sourceProfile,
     sourceMajor: preflight.sourceMajor,
     targetMajor: preflight.targetMajor,
     route: preflight.route,

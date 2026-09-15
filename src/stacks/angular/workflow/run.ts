@@ -1,6 +1,9 @@
 import { stableDisplayChecksum } from "../../../scenarios/runtime/checksum.ts";
-import { ANGULAR11_CRUD_SOURCE } from "../domain/demo-source.ts";
-import type { AngularRunSeed } from "../domain/types.ts";
+import {
+  ANGULAR11_CRUD_SOURCE,
+  ANGULAR_MOVIES_SOURCE,
+} from "../domain/demo-source.ts";
+import type { AngularRunSeed, AngularSourceProfileId } from "../domain/types.ts";
 import { prepareProvenStage } from "./proven.ts";
 import { createAngularLiveExecution } from "./live-definitions.ts";
 import type {
@@ -53,7 +56,7 @@ const ANGULAR_STAGE_EXACT = {
 } as const;
 
 function buildAngularPlanningRevision(
-  run: Pick<AngularRunModel, "id" | "sourceMajor" | "targetMajor" | "route">,
+  run: Pick<AngularRunModel, "id" | "sourceProfile" | "sourceMajor" | "targetMajor" | "route">,
   revision: number,
   status: AngularPlanningRevision["status"],
   summary: string,
@@ -66,6 +69,7 @@ function buildAngularPlanningRevision(
   if (!exact) {
     throw new Error("No exact Planning cohort is registered for Angular " + first.source + ".");
   }
+  const isAngularMovies = run.sourceProfile === "ANGULAR_MOVIES";
 
   return {
     revision,
@@ -106,7 +110,10 @@ function buildAngularPlanningRevision(
         "tests",
         "lint",
       ],
-      builder: "@angular-devkit/build-angular:browser",
+      builder:
+        run.sourceProfile === "ANGULAR_MOVIES"
+          ? ANGULAR_MOVIES_SOURCE.builder
+          : "@angular-devkit/build-angular:browser",
     },
     policies: {
       validation: "angular-stage-standard-v2",
@@ -123,14 +130,22 @@ function buildAngularPlanningRevision(
     narrative: {
       rationale: [
         "Execute every Angular major as an adjacent stage and resolve each later exact cohort only from the previous sealed output.",
-        "Preserve the existing @angular-devkit/build-angular:browser build system instead of introducing an unrelated builder migration.",
+        isAngularMovies
+          ? "Preserve the existing application builder, Nx project boundary, and Angular SSR entrypoint instead of introducing an unrelated builder migration."
+          : "Preserve the existing @angular-devkit/build-angular:browser build system instead of introducing an unrelated builder migration.",
         "Keep package-lock.json and structured command-registry references authoritative; Planning never emits raw shell authority.",
         "Require build/test validation, independent review, human gates, repair validation, candidate promotion, and stage sealing before advancing.",
-        "Carry the Angular 11 CRUD application invariants—lazy UsersModule, Reactive Forms, HttpClient/interceptor behavior, and CRUD routes—through stage validation.",
+        isAngularMovies
+          ? "Carry the Angular Movies SSR, lazy route, service-worker, and browser-flow invariants through stage validation."
+          : "Carry the Angular 11 CRUD application invariants—lazy UsersModule, Reactive Forms, HttpClient/interceptor behavior, and CRUD routes—through stage validation.",
       ],
       risks: [
-        "TSLint/Codelyzer and Protractor require governed tooling transitions at later majors.",
-        "The source has no unit specs, so route/service/E2E/build evidence has greater importance until coverage improves.",
+        isAngularMovies
+          ? "The Angular 19 SSR CommonEngine import boundary is a source-grounded repair checkpoint."
+          : "TSLint/Codelyzer and Protractor require governed tooling transitions at later majors.",
+        isAngularMovies
+          ? "SSR, prerender, service-worker, and browser-flow evidence must remain equivalent after each stage."
+          : "The source has no unit specs, so route/service/E2E/build evidence has greater importance until coverage improves.",
         "Runtime/catalogue drift must be revalidated immediately before each stage starts.",
         "Third-party and RxJS compatibility may require bounded dependency or source repair; force resolution remains forbidden.",
       ],
@@ -255,14 +270,15 @@ export function createAngularRunModel(seed: AngularRunSeed): AngularRunModel {
       G05: gate(seed, "G05", seed.state === "COMPLETED" ? "APPROVED" : "LOCKED"),
       G06: gate(seed, "G06", seed.state === "COMPLETED" ? "APPROVED" : "LOCKED"),
     },
-    baseline: seed.state === "COMPLETED" ? completedBaseline() : initialBaseline(),
-    analysis: seed.state === "COMPLETED" ? completedAnalysis() : initialAnalysis,
-    feasibility: seed.state === "COMPLETED" ? { ...completedFeasibility() } : initialFeasibility,
+    baseline: seed.state === "COMPLETED" ? completedBaseline(seed.sourceProfile) : initialBaseline(),
+    analysis: seed.state === "COMPLETED" ? completedAnalysis("APPROVED", seed.sourceProfile) : initialAnalysis,
+    feasibility: seed.state === "COMPLETED" ? { ...completedFeasibility(seed.sourceProfile) } : initialFeasibility,
     planning: seed.state === "COMPLETED"
       ? [
           buildAngularPlanningRevision(
             {
               id: seed.id,
+              sourceProfile: seed.sourceProfile,
               sourceMajor: seed.sourceMajor,
               targetMajor: seed.targetMajor,
               route: seed.route,
@@ -310,7 +326,24 @@ export function createAngularRunModel(seed: AngularRunSeed): AngularRunModel {
   };
 }
 
-export function completedBaseline(): AngularBaselineModel {
+export function completedBaseline(
+  sourceProfile: AngularSourceProfileId = "ANGULAR11_CRUD",
+): AngularBaselineModel {
+  if (sourceProfile === "ANGULAR_MOVIES") {
+    return {
+      outcome: "QUALIFIED_WITH_GAPS",
+      knownFailures: [],
+      knownGaps: [
+        "SSR and prerender output require browser/runtime parity checks after each Angular major.",
+        "The source uses Jest plus Push-based user-flow and Puppeteer; no Protractor, Cypress, or Playwright authority is present in the source revision.",
+      ],
+      steps: initialBaseline().steps.map((step) => ({
+        ...step,
+        status: "PASS" as const,
+      })),
+    };
+  }
+
   return {
     outcome: "QUALIFIED_WITH_GAPS",
     knownFailures: [],
@@ -325,9 +358,125 @@ export function completedBaseline(): AngularBaselineModel {
   };
 }
 
+function completedAngularMoviesAnalysis(
+  status: AngularAnalysisModel["status"],
+): AngularAnalysisModel {
+  return {
+    revision: 1,
+    status,
+    facts: [
+      "1 Nx workspace project: movies",
+      "Standalone Angular application with lazy movie, person, and account routes",
+      "Angular SSR entrypoint uses CommonEngine from @angular/ssr in the source revision",
+      "Service worker and prerender-ready application target are configured",
+      "package-lock.json is the package authority",
+      "Jest 29 + jest-preset-angular and Push-based user-flow + Puppeteer are the recorded test tools",
+    ],
+    risks: [
+      "The Angular 19 SSR server entry requires a governed @angular/ssr/node import correction.",
+      "Nx project boundaries and the application builder must remain intact through each adjacent-major stage.",
+      "Lazy movie, person, and account route behavior must remain equivalent after each migration.",
+      "SSR, prerender, service-worker, and browser-flow output require runtime parity evidence at every stage.",
+    ],
+    unknowns: [
+      "The first Angular 19 validation result must confirm that the source-grounded SSR import correction is sufficient before later stages proceed.",
+    ],
+    reviewerVerdict: "ACCEPT",
+    summary:
+      "The source is the Angular 18.2.14 tastejs/angular-movies Nx workspace: a standalone SSR application with lazy movie, person, and account routes, RxAngular state primitives, and browser-flow tooling. The first adjacent-major repair is grounded in the repository's Angular 19 SSR import correction.",
+    confidence: "HIGH",
+    proposer: llmProvenance("phase_proposer", "SUCCEEDED", 3500, 3012, 812),
+    reviewer: llmProvenance("phase_reviewer", "SUCCEEDED", 3400, 1840, 416),
+    applicationProfile: {
+      repository: ANGULAR_MOVIES_SOURCE.repository,
+      revision: ANGULAR_MOVIES_SOURCE.revision,
+      applicationName: ANGULAR_MOVIES_SOURCE.applicationName,
+      angular: ANGULAR_MOVIES_SOURCE.angular,
+      angularCli: ANGULAR_MOVIES_SOURCE.angularCli,
+      buildAngular: ANGULAR_MOVIES_SOURCE.buildAngular,
+      typescript: ANGULAR_MOVIES_SOURCE.typescript,
+      rxjs: ANGULAR_MOVIES_SOURCE.rxjs,
+      zoneJs: ANGULAR_MOVIES_SOURCE.zoneJs,
+      projects: ANGULAR_MOVIES_SOURCE.projects,
+      lazyFeatureModules: ANGULAR_MOVIES_SOURCE.lazyFeatureModules,
+      crudOperations: ANGULAR_MOVIES_SOURCE.crudOperations,
+      routes: [...ANGULAR_MOVIES_SOURCE.routes],
+      architecture: [...ANGULAR_MOVIES_SOURCE.architecture],
+      tooling: { ...ANGULAR_MOVIES_SOURCE.tooling },
+    },
+    findings: [
+      {
+        id: "standalone-nx",
+        category: "ARCHITECTURE",
+        severity: "INFO",
+        title: "Preserve the standalone Nx project boundary",
+        evidence:
+          "The source revision contains one movies project with an Angular application target and Nx workspace configuration.",
+        impact:
+          "Keep project ownership, builder configuration, and source roots stable while adjacent Angular majors are applied.",
+      },
+      {
+        id: "ssr-import-boundary",
+        category: "ARCHITECTURE",
+        severity: "MIGRATION_REQUIRED",
+        title: "Update the SSR CommonEngine import for Angular 19",
+        evidence:
+          "The source server entry imports CommonEngine from @angular/ssr; the repository's Angular 19 update changes it to @angular/ssr/node.",
+        impact:
+          "The bounded source patch must be reviewed and validated before the Angular 18 → 19 stage can seal.",
+      },
+      {
+        id: "movies-routes",
+        category: "ROUTING",
+        severity: "WATCH",
+        title: "Keep movie, person, and account routes equivalent",
+        evidence:
+          "The source route table includes list, detail, account, and page-not-found paths with parameterized identifiers.",
+        impact:
+          "Run browser-flow and SSR route checks after each adjacent-major stage.",
+      },
+      {
+        id: "ssr-prerender",
+        category: "ARCHITECTURE",
+        severity: "WATCH",
+        title: "Preserve SSR and prerender behavior",
+        evidence:
+          "The project has a server entrypoint plus service-worker and prerender-ready application configuration.",
+        impact:
+          "Build output, server rendering, and browser hydration need separate validation evidence.",
+      },
+      {
+        id: "movies-tooling",
+        category: "TESTING",
+        severity: "WATCH",
+        title: "Retain the recorded Jest and browser-flow authorities",
+        evidence:
+          "The source tooling is Jest 29 + jest-preset-angular for unit coverage and Push-based user-flow + Puppeteer for browser flows.",
+        impact:
+          "Do not substitute a generic legacy test stack; preserve the source test intent during the migration.",
+      },
+      {
+        id: "movies-dependencies",
+        category: "DEPENDENCY",
+        severity: "WATCH",
+        title: "Re-resolve the Nx and RxAngular dependency cohort per stage",
+        evidence:
+          "The source has 100 package entries, 84 non-Angular third-party entries, RxAngular primitives, and a package-lock authority.",
+        impact:
+          "Each stage must resolve a compatible cohort from the previous sealed output without force resolution.",
+      },
+    ],
+  };
+}
+
 export function completedAnalysis(
   status: AngularAnalysisModel["status"] = "APPROVED",
+  sourceProfile: AngularSourceProfileId = "ANGULAR11_CRUD",
 ): AngularAnalysisModel {
+  if (sourceProfile === "ANGULAR_MOVIES") {
+    return completedAngularMoviesAnalysis(status);
+  }
+
   return {
     revision: 1,
     status,
@@ -456,7 +605,24 @@ export function completedAnalysis(
   };
 }
 
-export function completedFeasibility(): AngularFeasibilityModel {
+export function completedFeasibility(
+  sourceProfile: AngularSourceProfileId = "ANGULAR11_CRUD",
+): AngularFeasibilityModel {
+  if (sourceProfile === "ANGULAR_MOVIES") {
+    return {
+      status: "APPROVED",
+      coreCompatibility: "SUPPORTED",
+      runtimeCompatibility: "SUPPORTED",
+      thirdPartySummary:
+        "84 non-Angular manifest entries tracked · Nx/RxAngular/SSR compatibility watched · Jest and Puppeteer browser-flow authorities preserved",
+      lockfileAuthority: "package-lock.json",
+      warnings: [
+        "The Angular 18 → 19 SSR import correction is bounded to projects/movies/server.ts and must clear G10/G11 validation before later stages.",
+        "SSR, prerender, service-worker, and browser-flow checks remain required at each adjacent-major boundary.",
+      ],
+    };
+  }
+
   return {
     status: "APPROVED",
     coreCompatibility: "SUPPORTED",
@@ -603,7 +769,9 @@ function progressApprovedGate(
       phase: "BASELINE",
       currentGate: null,
       currentAction: "Baseline execution running",
-      liveExecution: createAngularLiveExecution("BASELINE", runtimeStartedAtMs),
+      liveExecution: createAngularLiveExecution("BASELINE", runtimeStartedAtMs, {
+        sourceProfile: run.sourceProfile,
+      }),
     };
   }
 
@@ -613,7 +781,9 @@ function progressApprovedGate(
       phase: "ANALYSIS",
       currentGate: null,
       currentAction: "Analysis Proposer and independent Reviewer are running",
-      liveExecution: createAngularLiveExecution("ANALYSIS", runtimeStartedAtMs),
+      liveExecution: createAngularLiveExecution("ANALYSIS", runtimeStartedAtMs, {
+        sourceProfile: run.sourceProfile,
+      }),
     };
   }
 
@@ -624,7 +794,9 @@ function progressApprovedGate(
       currentGate: null,
       currentAction: "Compatibility and migration readiness analysis running",
       analysis: { ...run.analysis, status: "APPROVED" },
-      liveExecution: createAngularLiveExecution("FEASIBILITY", runtimeStartedAtMs),
+      liveExecution: createAngularLiveExecution("FEASIBILITY", runtimeStartedAtMs, {
+        sourceProfile: run.sourceProfile,
+      }),
     };
   }
 
@@ -635,7 +807,9 @@ function progressApprovedGate(
       currentGate: null,
       currentAction: "Planning Proposer and independent Reviewer are running",
       feasibility: { ...run.feasibility, status: "APPROVED" },
-      liveExecution: createAngularLiveExecution("PLANNING", runtimeStartedAtMs),
+      liveExecution: createAngularLiveExecution("PLANNING", runtimeStartedAtMs, {
+        sourceProfile: run.sourceProfile,
+      }),
     };
   }
 
@@ -659,8 +833,12 @@ function progressApprovedGate(
       "STAGE_PREPARATION",
       runtimeStartedAtMs,
       nextStage
-        ? { source: nextStage.source, target: nextStage.target }
-        : {},
+        ? {
+            source: nextStage.source,
+            target: nextStage.target,
+            sourceProfile: run.sourceProfile,
+          }
+        : { sourceProfile: run.sourceProfile },
     ),
   };
 }
@@ -669,18 +847,25 @@ export function completeAngularBaselineExecution(
   run: AngularRunModel,
   now: string,
 ): AngularRunModel {
-  return {
-    ...run,
-    phase: "BASELINE",
-    currentGate: "G03",
-    currentAction: "Review qualified baseline and known source failures",
-    gates: unlock(run.gates, "G03"),
-    baseline: completedBaseline(),
-    liveExecution: undefined,
-    operations: {
-      ...run.operations,
-      commands: [
-        ...run.operations.commands,
+  const commands = run.sourceProfile === "ANGULAR_MOVIES"
+    ? [
+        baselineCommand(run.id, "BASELINE_INSTALL", "npm ci", now, [
+          "Lockfile authority accepted.",
+          "100 manifest package entries resolved.",
+          "Install completed.",
+        ]),
+        baselineCommand(run.id, "BASELINE_BUILD", "npx nx build movies", now, [
+          "Angular application and SSR server entrypoint built.",
+          "Builder: @angular-devkit/build-angular:application.",
+          "Baseline build completed with exit code 0.",
+        ]),
+        baselineCommand(run.id, "BASELINE_TEST", "npx nx test movies --runInBand", now, [
+          "Jest 29 + jest-preset-angular authority verified.",
+          "SSR route render and Puppeteer browser-flow checks registered.",
+          "Baseline test matrix completed.",
+        ]),
+      ]
+    : [
         baselineCommand(run.id, "BASELINE_INSTALL", "npm ci", now, [
           "Lockfile authority accepted.",
           "Install completed.",
@@ -692,6 +877,21 @@ export function completeAngularBaselineExecution(
           "Karma/Jasmine/Chrome harness verified.",
           "No source unit specs discovered; coverage gap classified as known baseline evidence.",
         ]),
+      ];
+
+  return {
+    ...run,
+    phase: "BASELINE",
+    currentGate: "G03",
+    currentAction: "Review qualified baseline and known source failures",
+    gates: unlock(run.gates, "G03"),
+    baseline: completedBaseline(run.sourceProfile),
+    liveExecution: undefined,
+    operations: {
+      ...run.operations,
+      commands: [
+        ...run.operations.commands,
+        ...commands,
       ],
     },
     evidence: [
@@ -713,13 +913,14 @@ export function completeAngularAnalysisExecution(
   run: AngularRunModel,
   now: string,
 ): AngularRunModel {
+  const analysis = completedAnalysis("READY_FOR_REVIEW", run.sourceProfile);
   return {
     ...run,
     phase: "ANALYSIS",
     currentGate: "G04",
     currentAction: "Review Analysis Proposer output and independent Reviewer verdict",
     gates: unlock(run.gates, "G04"),
-    analysis: completedAnalysis("READY_FOR_REVIEW"),
+    analysis,
     liveExecution: undefined,
     evidence: [
       ...run.evidence,
@@ -728,7 +929,7 @@ export function completeAngularAnalysisExecution(
         category: "ANALYSIS",
         title: "Analysis Proposer + independent Reviewer completed",
         summary:
-          "Repository-grounded Angular 11 CRUD findings, Azure AI Foundry proposer/reviewer provenance, and evidence references were bound to the G04 package.",
+          `Repository-grounded ${analysis.applicationProfile?.repository ?? `Angular ${run.sourceMajor}`} findings, Azure AI Foundry proposer/reviewer provenance, and evidence references were bound to the G04 package.`,
         timestamp: now,
         checksum: stableDisplayChecksum(`${run.id}:analysis:completed`),
       },
@@ -746,7 +947,7 @@ export function completeAngularFeasibilityExecution(
     currentGate: "G05",
     currentAction: "Review migration readiness and compatibility evidence",
     gates: unlock(run.gates, "G05"),
-    feasibility: { ...completedFeasibility(), status: "READY_FOR_REVIEW" },
+    feasibility: { ...completedFeasibility(run.sourceProfile), status: "READY_FOR_REVIEW" },
     liveExecution: undefined,
     evidence: [
       ...run.evidence,
@@ -771,7 +972,7 @@ export function completeAngularPlanningExecution(
     run,
     run.planning.length + 1,
     "READY_FOR_REVIEW",
-    "Deterministic Angular 11→21 plan: full adjacent-major route, exact first-stage contract, structured commands, governed policies, proposer explanation, and independent review.",
+    `Deterministic Angular ${run.sourceMajor}→${run.targetMajor} plan: full adjacent-major route, exact first-stage contract, structured commands, governed policies, proposer explanation, and independent review.`,
   );
   return {
     ...run,

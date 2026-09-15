@@ -29,10 +29,10 @@ import { AngularRouteBoard } from "./angular-route-board";
 
 export function AngularSetupPage() {
   const router = useRouter();
-  const [runName, setRunName] = useState("Angular 11 CRUD Example");
-  const [sourcePath, setSourcePath] = useState("/workspace/angular-11-crud-example");
+  const [runName, setRunName] = useState("Angular Movies");
+  const [sourcePath, setSourcePath] = useState("/workspace/angular-movies");
   const [outputParent, setOutputParent] = useState("/workspace/migration-output");
-  const [sourceMajor, setSourceMajor] = useState<AngularMajor>(11);
+  const [sourceMajor, setSourceMajor] = useState<AngularMajor>(18);
   const [targetMajor, setTargetMajor] = useState<AngularMajor>(21);
   const [error, setError] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
