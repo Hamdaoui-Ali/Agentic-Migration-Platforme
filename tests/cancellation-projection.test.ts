@@ -19,7 +19,6 @@ test("cancellation stays an operator action, never a Java workflow phase", () =>
   const evidence = source("../src/stacks/java/components/java-evidence-workspace.tsx");
 
   assert.match(pipeline, /out-of-band operator action/);
-  assert.match(cockpit, /java-cancel/);
   assert.match(cockpit, /cancelJavaMigration/);
   assert.match(evidence, /CANCELLATION/);
 });
@@ -50,15 +49,14 @@ test("Angular cancellation rejects terminal runs", () => {
   );
 });
 
-test("both workspaces expose a visible cancellation trigger", () => {
+test("both workspaces expose a visible header cancellation trigger", () => {
   const angular = source("../src/stacks/angular/components/angular-control-tower-page.tsx");
   const java = source("../src/stacks/java/components/java-cockpit-page.tsx");
   const angularEvidence = source("../src/stacks/angular/components/angular-evidence-workspace.tsx");
 
   assert.match(angular, /cancelAngularMigration/);
-  assert.match(angular, /angular-cancel/);
   assert.match(angular, /Cancel migration/);
-  assert.match(java, /java-cancel/);
+  assert.match(java, /cancelJavaMigration/);
   assert.match(java, /Cancel migration/);
   assert.match(angularEvidence, /CANCELLATION/);
 });

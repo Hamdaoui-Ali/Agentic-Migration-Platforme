@@ -22,7 +22,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | environment/runtime readiness | `backend/app/api/routes/environment.py`, runtime/execution-profile routes |
 | setup environment diagnosis reveal | `backend/app/api/routes/environment.py`, runtime/execution-profile routes; presentation timing is local and deterministic |
 | eligible-gate automation preference | `AGENTS.md` and Angular gate services; local presentation runner only calls the existing allowed decision set; the workspace header can switch the local preference back to manual |
-| cancellation action | Angular run owner and persisted runtime cancellation contract; the workspace header and sticky action both call the Angular-owned cancellation transition |
+| cancellation action | Angular run owner and persisted runtime cancellation contract; the workspace header is the single visible cancellation control and calls the Angular-owned cancellation transition |
 | G02 | `backend/app/domain/g02.py`, `backend/app/api/routes/g02.py` |
 | baseline/G03 | `baseline.py`, `baseline_matrix.py`, `baseline_parity.py`, `baseline_g03.py`, `domain/baseline_qualification.py` |
 | G04 analysis | `domain/analysis.py`, `api/routes/analysis.py` |
@@ -35,7 +35,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | policy-selected post-validation authority | `proven_stage_execution_service.py`, `candidate_promotion_service.py`, `stage_gate_service.py`, persisted run evidence |
 | sealing | `services/stage_sealing_service.py`, `orchestration/transformer_sealing_flow.py` |
 | repair/causal policy | repair services, `domain/repair_lifecycle.py`, proven run evidence |
-| reviewed diff correction actions | repair services, `domain/repair_lifecycle.py`, `services/stage_gate_service.py`; the composer is presentation-only and routes apply/request/typed-review intent to the existing G10 decision owner |
+| reviewed diff correction actions | repair services, `domain/repair_lifecycle.py`, `services/stage_gate_service.py`; the composer is presentation-only and routes accept/AI-hint/manual-override intent to the existing G10 decision owner while preserving child revision history |
 | commands/logs | `api/routes/run_commands.py`, command domain/services |
 | rollback | `api/routes/stage_rollback.py` |
 | partial delivery | `api/routes/partial_delivery.py` |
@@ -43,6 +43,7 @@ This file maps presentation behavior to the two audited source snapshots.
 | audit/quality | `execution_audit.py`, `quality_metrics.py` |
 | assistant/LLM | `assistant.py`, `llm.py` |
 | persistent migration assistant surface | `assistant.py`, `llm.py`; the global FAB is a presentation surface and does not mutate workflow state |
+| full-width Analysis/Planning evidence | Angular pipeline presentation; agent output uses the primary workspace column and route context follows as secondary evidence |
 | current hardcoded route debt | `frontend/src/presentation/runJourney.ts`, `currentAction.ts` |
 
 ### Angular discrepancy rule
@@ -75,7 +76,8 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | repair | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `v2_repair_projection.py` — normal repair attempts are scoped to route stages 1–3 |
 | Repair Assistant | `repair_assistant_service.py` |
 | persistent migration assistant surface | `v2_gate_assistant.py`, `repair_assistant_service.py`; the global FAB is a presentation surface and does not mutate workflow state |
-| reviewed diff correction actions | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `Java GitDiffView`; the composer keeps the patch immutable and routes apply/request/typed-review intent to the existing `repair_review` gate |
+| full-width Analysis/Planning evidence | Java pipeline presentation; agent output uses the primary workspace width and Spring Boot route/PhaseGate history follows as secondary context |
+| reviewed diff correction actions | `v2_repair_flow.py`, `v2_reviewer_service.py`, `v2_repair_gate_service.py`, `Java GitDiffView`; the composer keeps the patch immutable and routes accept/AI-hint/manual-override intent to the existing `repair_review` gate |
 | target versions/POM | `target_version_update.py`, `target_version_validation_coordinator.py`, POM proposer/editor/review/validator/xml patcher — CSV/XLSX target authorities are parsed before comparison |
 | Stage 4 terminal behavior | `v2_stage_progression.py`, `v2_orchestrator_runner.py`, `schemas/phase_gate.py` |
 | final report | `v2_final_report_service.py` |
@@ -83,7 +85,7 @@ For the locked v2.3 snapshot, the approved 2026-09-01 Transformer spec and the e
 | New Migration UI | `web/control-tower/app/migrations/new/*` |
 | setup environment diagnosis reveal and automation preference | `web/control-tower/app/migrations/new/*`, `schemas/run_configuration.py`; presentation preference is local and does not alter Java gate authority |
 | eligible-gate automation preference | `v2_phase_gate_service.py`, `v2_gate_action_service.py`; local presentation runner selects only `CONTINUE`/`APPROVE` when those decisions are allowed; the workspace header can switch the local preference back to manual |
-| cancellation action | `v2_phase_gate_service.py`, `v2_gate_action_service.py`, cancellation workflow/evidence; the workspace header and sticky action both call the Java-owned cancellation transition, which remains an out-of-band operator action and is never projected as a PhaseGate or pipeline phase |
+| cancellation action | `v2_phase_gate_service.py`, `v2_gate_action_service.py`, cancellation workflow/evidence; the workspace header is the single visible cancellation control and calls the Java-owned cancellation transition, which remains an out-of-band operator action and is never projected as a PhaseGate or pipeline phase |
 | Cockpit UI | `web/control-tower/app/migrations/[jobId]/MigrationCockpit.tsx` and components |
 | target-version UI | `Stage4TargetVersionComparison.tsx` |
 
@@ -99,9 +101,18 @@ Java Stage 1–3 repair presents the reviewed repair proposal as a unified Git p
 
 Any future workflow change in this presentation app must update this matrix in the same commit and cite the original stack source that authorizes the change.
 
-## Angular presentation source application
+## Angular presentation source applications
 
-The primary Angular migration case is grounded in the real application source:
+The primary Angular presentation case is grounded in the real application source:
+
+- Repository: `tastejs/angular-movies`
+- Parent revision: `794e45e00cc2e0935b1a48a372b9a34779f016cb`
+- Source: Angular 18.2.14 / Angular CLI 18.2.21 / build-angular 18.2.21 / TypeScript 5.5.4 / RxJS 7.8.2 / zone.js 0.14.10
+- Workspace: one Nx `movies` project with standalone Angular, SSR, six lazy feature modules, service-worker/prerender configuration, and package-lock authority
+- Presentation route: editable Angular 18 → 21 setup using `computeAngularRoute(18, 21)` for 18 → 19, 19 → 20, and 20 → 21
+- Agent evidence: Analysis and Planning output occupies the primary workspace width; route context follows below the agent sections
+
+The legacy Angular CRUD source remains supported explicitly:
 
 - Repository: `cornflourblue/angular-11-crud-example`
 - Branch: `master`
@@ -114,8 +125,9 @@ This repository supplies presentation **application evidence only**. Angular wor
 
 ## Angular repair presentation reference
 
-The presentation does not fabricate a Main Repair LLM failure on Angular 13→14. It now has two deliberately different repair evidence classes:
+The presentation does not fabricate a Main Repair LLM failure on Angular 13→14. It now has three deliberately different repair evidence classes:
 
+- **Angular 18→19 — source-grounded SSR import correction for the primary presentation route.** The public `tastejs/angular-movies` history moves `CommonEngine` in `projects/movies/server.ts` from `@angular/ssr` to `@angular/ssr/node` in target commit `a002daf3e4ce107f3ef4cd99259e730438f5d1a3`, whose parent is `794e45e00cc2e0935b1a48a372b9a34779f016cb`. The review surface shows the repository, both commits, file path, commit link, compare link, and the exact unified diff. G10 offers accept, AI-hint retry, or manual override; child inputs preserve parent lineage and the original attempt remains immutable.
 - **Angular 15→16 — source-grounded tooling compatibility case, not persisted E2E proof.** The locked CRUD source revision carries `npm run lint -> ng lint`, `codelyzer ^6.0.0`, `tslint ~6.1.0`, and an `@angular-devkit/build-angular:tslint` workspace target. Angular CLI `16.2.16`'s `@angular-devkit/build-angular` `builders.json` no longer registers a `tslint` builder. The governed tooling-transition repair is: Repair Proposer → Independent Reviewer → G10 → package/config apply → npm lock regeneration → `npm ci` → lint → build → tests → G11. The replacement builder contract is grounded in `angular-eslint/angular-eslint@v16.3.1`, which exposes `@angular-eslint/builder:lint` and `lintFilePatterns`. This case demonstrates the workflow against real source/tooling incompatibility evidence; it does **not** claim that a persisted v2.3 backend run executed Angular 15→16.
 - **Angular 20→21 — persisted E2E reference.** This remains the audited repair family from `evidence/TRANSFORMER_E2E_IMPLEMENTATION_HANDOFF.md` at the locked v2.3 source.
 

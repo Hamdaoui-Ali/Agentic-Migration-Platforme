@@ -30,11 +30,34 @@ test("landing includes direct presenter links for Java analysis, repair, and ter
 });
 
 
-test("Angular presenter cards match the Angular 11 CRUD source-grounded scenario", () => {
+test("Angular presenter cards lead with Movies and retain the legacy scenario", () => {
   const angular = recentMigrations.filter((migration) => migration.stack === "Angular");
   assert.equal(angular.length, 2);
-  assert.ok(angular.every((migration) => migration.name === "Angular 11 CRUD Example"));
-  assert.ok(angular.every((migration) => migration.route === "Angular 11 → 21"));
+
+  assert.deepEqual(
+    angular.find((migration) => migration.id === "ang-movies-action"),
+    {
+      id: "ang-movies-action",
+      name: "Angular Movies",
+      stack: "Angular",
+      route: "Angular 18 \u2192 21",
+      status: "ACTION_REQUIRED",
+      href: "/angular/migrations/run-angular-action",
+      updated: "2 min ago",
+    },
+  );
+  assert.deepEqual(
+    angular.find((migration) => migration.id === "ang-crud-complete"),
+    {
+      id: "ang-crud-complete",
+      name: "Angular 11 CRUD Example",
+      stack: "Angular",
+      route: "Angular 11 \u2192 21",
+      status: "COMPLETED",
+      href: "/angular/migrations/run-angular-complete",
+      updated: "Yesterday",
+    },
+  );
 });
 
 test("landing presents an operational launchpad with theme choice", () => {
