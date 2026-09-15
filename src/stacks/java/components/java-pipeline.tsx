@@ -19,7 +19,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
         : null;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(360px,.75fr)]">
+    <div className="space-y-6">
       <div className="space-y-6">
         <Panel>
           <PanelHeader
@@ -50,7 +50,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
             active={job.currentGate === "analysis_review"}
             summary={job.analysis.at(-1)?.summary ?? "Reviewed analysis"}
           >
-            <Panel>
+            <div data-agent-output="analysis" className="space-y-5">
             <PanelHeader eyebrow="Analysis Agent" title="Analysis revisions" />
             <div className="mt-5 space-y-3">
               {job.analysis.map((revision) => (
@@ -104,7 +104,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
                 </div>
               ))}
             </div>
-            </Panel>
+            </div>
           </PhaseDisclosure>
         ) : null}
 
@@ -115,7 +115,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
             active={job.currentGate === "planning_review"}
             summary={job.planning.at(-1)?.summary ?? "Reviewed planning revision"}
           >
-            <Panel>
+            <div data-agent-output="planning" className="space-y-5">
             <PanelHeader eyebrow="Planning Agent" title="Plan revisions" />
             <div className="mt-5 space-y-3">
               {job.planning.map((revision) => (
@@ -156,7 +156,7 @@ export function JavaPipeline({ job }: { job: JavaJobModel }) {
                 </div>
               ))}
             </div>
-            </Panel>
+            </div>
           </PhaseDisclosure>
         ) : null}
 

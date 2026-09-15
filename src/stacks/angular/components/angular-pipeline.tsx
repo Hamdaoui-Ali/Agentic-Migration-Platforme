@@ -8,7 +8,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
   const gateOrder = ["G02", "G03", "G04", "G05", "G06"] as const;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,.8fr)]">
+    <div className="space-y-6">
       <div className="space-y-6">
         <Panel>
           <PanelHeader
@@ -87,7 +87,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
             active={run.currentGate === "G04"}
             summary={run.analysis.summary}
           >
-            <Panel>
+            <div data-agent-output="analysis" className="space-y-5">
             <PanelHeader
               eyebrow="G04"
               title="Analysis Proposer + Independent Reviewer"
@@ -210,7 +210,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                 <p className="mt-2 text-sm text-[var(--mf-text-muted)]">{run.analysis.unknowns.length || "No blocking unknowns"}</p>
               </div>
             </div>
-            </Panel>
+            </div>
           </PhaseDisclosure>
         ) : null}
 
@@ -221,7 +221,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
             active={run.currentGate === "G05"}
             summary={run.feasibility.thirdPartySummary}
           >
-            <Panel>
+            <div className="space-y-5">
             <PanelHeader eyebrow="G05" title="Migration readiness" action={<StatusBadge label={run.feasibility.status} />} />
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               <Fact label="Core compatibility" value={run.feasibility.coreCompatibility} />
@@ -229,7 +229,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
               <Fact label="Third-party compatibility" value={run.feasibility.thirdPartySummary} />
               <Fact label="Lockfile authority" value={run.feasibility.lockfileAuthority} />
             </div>
-            </Panel>
+            </div>
           </PhaseDisclosure>
         ) : null}
 
@@ -240,7 +240,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
             active={run.currentGate === "G06"}
             summary={run.planning.at(-1)?.summary ?? "Reviewed migration plan"}
           >
-            <Panel>
+            <div data-agent-output="planning" className="space-y-5">
             <PanelHeader eyebrow="G06" title="Migration plan revisions" />
             <div className="mt-5 space-y-3">
               {run.planning.map((revision) => (
@@ -337,7 +337,7 @@ export function AngularPipeline({ run }: { run: AngularRunModel }) {
                 </div>
               ))}
             </div>
-            </Panel>
+            </div>
           </PhaseDisclosure>
         ) : null}
       </div>
