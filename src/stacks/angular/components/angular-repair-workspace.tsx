@@ -131,9 +131,13 @@ export function AngularRepairWorkspace({
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-text-soft)]">
                         {sourcePatch
-                          ? attempt.reviewerVerdict === "ACCEPT"
-                            ? "Reviewed diff"
-                            : "Candidate diff"
+                          ? attempt.reviewInput?.mode === "MANUAL_OVERRIDE"
+                            ? "Manual override candidate"
+                            : attempt.sourceReference
+                              ? "Source-grounded patch"
+                              : attempt.reviewerVerdict === "ACCEPT"
+                                ? "Reviewed diff"
+                                : "Candidate diff"
                           : toolingTransition
                             ? "Governed tooling transition"
                             : governedOperation
@@ -161,6 +165,56 @@ export function AngularRepairWorkspace({
                     </div>
                   )}
                 </div>
+
+                {attempt.sourceReference ? (
+                  <div className="mt-4 rounded-lg border border-[var(--mf-border)] bg-[var(--mf-surface-subtle)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-primary)]">
+                          Source provenance
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {attempt.sourceReference.repository}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-[10px] font-semibold">
+                        <a
+                          className="rounded-md border border-[var(--mf-border)] bg-[var(--mf-surface)] px-2.5 py-1.5 text-[var(--mf-primary)] hover:underline"
+                          href={attempt.sourceReference.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open source commit
+                        </a>
+                        <a
+                          className="rounded-md border border-[var(--mf-border)] bg-[var(--mf-surface)] px-2.5 py-1.5 text-[var(--mf-primary)] hover:underline"
+                          href={attempt.sourceReference.compareUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open compare
+                        </a>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <Fact label="File" value={attempt.sourceReference.path} />
+                      <Fact label="Source commit" value={attempt.sourceReference.sourceCommit} />
+                      <Fact label="Target commit" value={attempt.sourceReference.targetCommit} />
+                      <Fact label="Repository" value={attempt.sourceReference.repository} />
+                    </div>
+                  </div>
+                ) : null}
+
+                {attempt.reviewInput ? (
+                  <div className="mt-4 rounded-lg border border-[var(--mf-primary)]/25 bg-[var(--mf-primary-soft)] p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--mf-primary)]">
+                      {attempt.reviewInput.mode === "AI_HINT" ? "AI hint" : "Manual override input"}
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap text-xs leading-5 text-[var(--mf-text-muted)]">
+                      {attempt.reviewInput.text}
+                    </p>
+                  </div>
+                ) : null}
 
                 {attempt.validationTargets?.length ? (
                   <div className="mt-4">

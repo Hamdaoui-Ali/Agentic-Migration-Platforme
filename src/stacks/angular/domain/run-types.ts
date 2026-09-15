@@ -231,6 +231,20 @@ export interface AngularRepairLlmActivity {
   decision?: "ACCEPT" | "REQUEST_CHANGES" | "REJECT";
 }
 
+export interface AngularRepairSourceReference {
+  repository: string;
+  sourceCommit: string;
+  targetCommit: string;
+  path: string;
+  sourceUrl: string;
+  compareUrl: string;
+}
+
+export interface AngularRepairReviewInput {
+  mode: "AI_HINT" | "MANUAL_OVERRIDE";
+  text: string;
+}
+
 export interface AngularRepairAttempt {
   id: string;
   attempt: number;
@@ -272,6 +286,8 @@ export interface AngularRepairAttempt {
   failureEvidenceChecksum?: string;
   proposalChecksum?: string;
   reviewChecksum?: string;
+  sourceReference?: AngularRepairSourceReference;
+  reviewInput?: AngularRepairReviewInput;
 }
 
 export interface AngularStageExecution {

@@ -15,6 +15,14 @@ test("repair workspace uses the structured Git diff renderer", () => {
   );
 });
 
+test("source-grounded repair shows provenance and review-input labels", () => {
+  assert.match(workspaceSource, /sourceReference/);
+  assert.match(workspaceSource, /Open source commit/);
+  assert.match(workspaceSource, /Open compare/);
+  assert.match(workspaceSource, /Source-grounded patch/);
+  assert.match(workspaceSource, /Manual override candidate/);
+});
+
 test("Git diff renderer exposes hunk rows, line numbers, red deletions, and green additions", () => {
   const path = "src/components/ui/git-diff-view.tsx";
   assert.equal(existsSync(path), true, "GitDiffView component must exist");

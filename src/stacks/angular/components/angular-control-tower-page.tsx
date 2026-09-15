@@ -54,7 +54,11 @@ import { AngularPipeline } from "./angular-pipeline";
 import { AngularProvenExecution } from "./angular-proven-execution";
 import { AngularRepairWorkspace } from "./angular-repair-workspace";
 import { AngularStageDecisionPanel } from "./angular-stage-decision-panel";
-import type { AngularStageGateDecision, AngularStageGateId } from "../domain/run-types";
+import type {
+  AngularRepairReviewInput,
+  AngularStageGateDecision,
+  AngularStageGateId,
+} from "../domain/run-types";
 import { angularConsoleEntries, angularJourney, angularNav, angularObservatory } from "./angular-presentation";
 
 const tabs = [
@@ -242,6 +246,7 @@ export function AngularControlTowerPage() {
     gate: AngularStageGateId,
     decision: AngularStageGateDecision,
     comment: string,
+    reviewInput?: AngularRepairReviewInput,
   ) {
     try {
       setError(null);
@@ -253,6 +258,7 @@ export function AngularControlTowerPage() {
         comment,
         new Date(nowMs).toISOString(),
         nowMs,
+        reviewInput,
       );
       putAngularRun(next);
       setRun(next);
@@ -438,10 +444,20 @@ export function AngularControlTowerPage() {
                 run={run}
                 onAcceptApply={() => handleStageDecision("G10", "APPROVE", "Accepted reviewed diff and apply it.")}
                 onRequestModification={(correction) =>
-                  handleStageDecision("G10", "REQUEST_MODIFICATION", correction || "Request modification from reviewed diff.")
+                  handleStageDecision(
+                    "G10",
+                    "REQUEST_MODIFICATION",
+                    correction || "Request modification from reviewed diff.",
+                    { mode: "AI_HINT", text: correction },
+                  )
                 }
                 onSubmitCorrection={(correction) =>
-                  handleStageDecision("G10", "REQUEST_MODIFICATION", correction)
+                  handleStageDecision(
+                    "G10",
+                    "REQUEST_MODIFICATION",
+                    correction,
+                    { mode: "MANUAL_OVERRIDE", text: correction },
+                  )
                 }
               />
             </div>

@@ -8,6 +8,7 @@ import type { AngularRouteStep } from "../domain/types.ts";
 import type {
   AngularProvenGroup,
   AngularRepairAttempt,
+  AngularRepairReviewInput,
   AngularRunModel,
   AngularStageExecution,
   AngularStageGateDecision,
@@ -431,6 +432,7 @@ function sourceBackedRepairAttempts18To19(
       failureEvidenceChecksum: checksum("repair-1:failure"),
       proposalChecksum: checksum("repair-1:proposal"),
       reviewChecksum: checksum("repair-1:review"),
+      sourceReference: ANGULAR_MOVIES_NG19_REPAIR,
     },
   ];
 }
@@ -605,6 +607,7 @@ export function applyAngularStageGateDecision(
   comment = "",
   now = "2026-08-31T20:05:00+01:00",
   runtimeStartedAtMs = Date.parse(now),
+  reviewInput?: AngularRepairReviewInput,
 ): AngularRunModel {
   const stage = run.stageExecution;
   if (!stage) throw new Error("No active Angular stage execution is available.");
@@ -614,6 +617,9 @@ export function applyAngularStageGateDecision(
   }
   if (!getAllowedStageDecisions(gateId).includes(decision)) {
     throw new Error(`${decision} is not valid for ${gateId}.`);
+  }
+  if (reviewInput && reviewInput.text.trim().length === 0) {
+    throw new Error("A review input must contain a hint or bounded patch.");
   }
 
   if (decision === "REQUEST_MODIFICATION") {
@@ -649,21 +655,36 @@ export function applyAngularStageGateDecision(
     }
 
     const attempt = attempts.length + 1;
+    const normalizedComment = comment.trim();
+    const input = reviewInput ?? (normalizedComment
+      ? { mode: "AI_HINT" as const, text: normalizedComment }
+      : undefined);
+    const isManualUnifiedPatch =
+      input?.mode === "MANUAL_OVERRIDE" &&
+      input.text.trimStart().startsWith("diff --git ");
+    const inherited = current;
     attempts.push({
       id: `${stage.stageId}-repair-${attempt}`,
       attempt,
       status: "READY_FOR_G10",
       failureCategory:
-        current?.failureCategory ?? "TEST_OR_BUILD_REGRESSION",
-      proposalKind: "SOURCE_PATCH",
+        inherited?.failureCategory ?? "TEST_OR_BUILD_REGRESSION",
+      failurePhase: inherited?.failurePhase,
+      failureOwner: inherited?.failureOwner,
+      proposalKind: inherited?.proposalKind ?? "SOURCE_PATCH",
+      operation: inherited?.operation,
+      parentAttemptId: inherited?.id,
       rationale:
-        comment.trim() ||
-        "Revised source patch incorporates reviewer feedback.",
-      changedFiles: ["src/app/order.service.spec.ts"],
-      diff: "- legacy expectation\n+ reviewed compatibility expectation",
-      reviewerVerdict: "ACCEPT",
-      causalResult: "PASS",
-      risk: "MEDIUM",
+        input?.text ||
+        "Revised source-grounded proposal requested for human review.",
+      changedFiles: inherited?.changedFiles ?? [],
+      diff: isManualUnifiedPatch ? input.text : inherited?.diff ?? "",
+      reviewerVerdict: "NOT_REVIEWED",
+      causalResult: inherited?.causalResult ?? "PASS",
+      risk: inherited?.risk ?? "MEDIUM",
+      sourceReference: inherited?.sourceReference,
+      reviewInput: input,
+      validationTargets: inherited?.validationTargets,
     });
 
     return {
