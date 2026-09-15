@@ -6,11 +6,13 @@ function source(path: string): string {
   return readFileSync(new URL(path, import.meta.url), "utf8");
 }
 
-test("correction composer exposes explicit apply, request, and typed correction actions", () => {
+test("correction composer exposes accept, AI retry, and manual override actions", () => {
   const composer = source("../src/components/shared/correction-composer.tsx");
-  assert.match(composer, /Accept and apply/);
-  assert.match(composer, /Request modification/);
-  assert.match(composer, /Submit correction for review/);
+  assert.match(composer, /Accept change/);
+  assert.match(composer, /Ask AI again/);
+  assert.match(composer, /Use manual override/);
+  assert.match(composer, /disabled=\{disabled \|\| !hasCorrection \|\| !onRequestModification\}/);
+  assert.match(composer, /disabled=\{disabled \|\| !hasCorrection \|\| !onSubmitCorrection\}/);
   assert.match(composer, /Correction to review/);
 });
 

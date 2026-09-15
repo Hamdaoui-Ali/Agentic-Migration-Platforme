@@ -298,21 +298,12 @@ export function AngularControlTowerPage() {
   const canCancel = run.state !== "CANCELLED" && run.state !== "COMPLETED";
 
   const shellActions: ShellAction[] = (() => {
-    const cancellationAction: ShellAction[] = canCancel
-      ? [{
-          id: "angular-cancel",
-          label: "Cancel migration",
-          variant: "danger" as const,
-          onSelect: () => setCancelOpen(true),
-        }]
-      : [];
-
-    if (run.liveExecution || !run.currentGate) return cancellationAction;
+    if (run.liveExecution || !run.currentGate) return [];
 
     if (["G07", "G09", "G10", "G11", "G12"].includes(run.currentGate)) {
       const gateId = run.currentGate as AngularStageGateId;
       const gate = run.stageExecution?.gates[gateId];
-      if (!gate || gate.status !== "PENDING") return cancellationAction;
+      if (!gate || gate.status !== "PENDING") return [];
       return [
         ...getAllowedStageDecisions(gateId).map((decision): ShellAction => ({
           id: `stage-${gateId}-${decision.toLowerCase()}`,
@@ -325,14 +316,13 @@ export function AngularControlTowerPage() {
           variant: decision === "REJECT" ? "danger" : decision === "APPROVE" ? "primary" : "secondary",
           onSelect: () => handleStageDecision(gateId, decision, ""),
         })),
-        ...cancellationAction,
       ];
     }
 
     if (["G02", "G03", "G04", "G05", "G06"].includes(run.currentGate)) {
       const gateId = run.currentGate as AngularPreTransformGateId;
       const gate = run.gates[gateId];
-      if (!gate || gate.status !== "PENDING") return cancellationAction;
+      if (!gate || gate.status !== "PENDING") return [];
       return [
         ...getAllowedPreTransformDecisions(gateId).map((decision): ShellAction => ({
           id: `pre-${gateId}-${decision.toLowerCase()}`,
@@ -348,11 +338,10 @@ export function AngularControlTowerPage() {
           disabled: decision === "APPROVE_WITH_COMMENT",
           onSelect: () => handleDecision(gateId, decision, ""),
         })),
-        ...cancellationAction,
       ];
     }
 
-    return cancellationAction;
+    return [];
   })();
 
   const navigation = angularNav(active, run).map((item) => ({

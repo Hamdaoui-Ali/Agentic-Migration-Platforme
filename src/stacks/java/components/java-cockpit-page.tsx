@@ -351,15 +351,7 @@ export function JavaCockpitPage() {
             onSelect: () => setActive("target-versions"),
           }]
         : [];
-    const cancellationAction: ShellAction[] = canCancel
-      ? [{
-          id: "java-cancel",
-          label: "Cancel migration",
-          variant: "danger",
-          onSelect: () => setCancelOpen(true),
-        }]
-      : [];
-    return [...gateActions, ...terminalAction, ...cancellationAction];
+    return [...gateActions, ...terminalAction];
   })();
 
   const navigation = javaNav(active, job).map((item) => ({

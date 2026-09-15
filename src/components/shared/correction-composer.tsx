@@ -7,7 +7,7 @@ import { textareaClassName } from "@/components/ui/form-field";
 
 export function CorrectionComposer({
   title = "Correction to review",
-  description = "Add a bounded correction for the owning workflow to review before it is applied.",
+  description = "Add an AI hint or paste a bounded patch for the owning workflow to review before it is applied.",
   disabled = false,
   onAcceptApply,
   onRequestModification,
@@ -34,8 +34,8 @@ export function CorrectionComposer({
         value={correction}
         disabled={disabled}
         onChange={(event) => setCorrection(event.target.value)}
-        placeholder="Paste the smallest correction you want reviewed"
-        aria-label="Typed correction"
+        placeholder="Add a hint or paste a bounded patch"
+        aria-label="Review input"
       />
       <div className="mt-3 flex flex-wrap gap-2">
         <Button
@@ -44,16 +44,16 @@ export function CorrectionComposer({
           onClick={onAcceptApply}
           disabled={disabled || !onAcceptApply}
         >
-          Accept and apply
+          Accept change
         </Button>
         <Button
           type="button"
           size="sm"
           variant="secondary"
           onClick={() => onRequestModification?.(correction.trim())}
-          disabled={disabled || !onRequestModification}
+          disabled={disabled || !hasCorrection || !onRequestModification}
         >
-          Request modification
+          Ask AI again
         </Button>
         <Button
           type="button"
@@ -62,7 +62,7 @@ export function CorrectionComposer({
           onClick={() => onSubmitCorrection?.(correction.trim())}
           disabled={disabled || !hasCorrection || !onSubmitCorrection}
         >
-          Submit correction for review
+          Use manual override
         </Button>
       </div>
       <p className="mt-3 text-[11px] leading-4 text-[var(--mf-text-soft)]">
