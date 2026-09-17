@@ -712,8 +712,13 @@ function createAngularGenericLiveExecutionRaw(
   startedAtMs: number,
   context: AngularLiveContext,
 ): AngularLiveExecution {
-  const source = context.source ?? 18;
-  const target = context.target ?? 21;
+  if (context.source === undefined || context.target === undefined) {
+    throw new Error(
+      "Generic Angular live execution requires source and target majors.",
+    );
+  }
+  const source = context.source;
+  const target = context.target;
   const routeStages = Array.from({ length: Math.max(0, target - source) }, (_, index) => {
     const stageSource = source + index;
     return `angular-${stageSource}.x -> angular-${stageSource + 1}.x`;

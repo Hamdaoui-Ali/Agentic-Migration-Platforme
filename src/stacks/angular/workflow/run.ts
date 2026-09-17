@@ -3,11 +3,12 @@ import {
   ANGULAR11_CRUD_SOURCE,
   ANGULAR_MOVIES_SOURCE,
 } from "../domain/demo-source.ts";
-import type { AngularRunSeed, AngularSourceProfileId } from "../domain/types.ts";
+import type { AngularMajor, AngularRunSeed, AngularSourceProfileId } from "../domain/types.ts";
 import { prepareProvenStage } from "./proven.ts";
 import { createAngularLiveExecution } from "./live-definitions.ts";
 import type {
   AngularAnalysisModel,
+  AngularApplicationProfile,
   AngularBaselineModel,
   AngularFeasibilityModel,
   AngularGateState,
@@ -70,6 +71,7 @@ function buildAngularPlanningRevision(
     throw new Error("No exact Planning cohort is registered for Angular " + first.source + ".");
   }
   const isAngularMovies = run.sourceProfile === "ANGULAR_MOVIES";
+  const isAngularCrud = run.sourceProfile === "ANGULAR11_CRUD";
 
   return {
     revision,
@@ -113,7 +115,9 @@ function buildAngularPlanningRevision(
       builder:
         run.sourceProfile === "ANGULAR_MOVIES"
           ? ANGULAR_MOVIES_SOURCE.builder
-          : "@angular-devkit/build-angular:browser",
+          : isAngularCrud
+            ? "@angular-devkit/build-angular:browser"
+            : "resolved from selected source workspace",
     },
     policies: {
       validation: "angular-stage-standard-v2",
@@ -132,25 +136,35 @@ function buildAngularPlanningRevision(
         "Execute every Angular major as an adjacent stage and resolve each later exact cohort only from the previous sealed output.",
         isAngularMovies
           ? "Preserve the existing application builder, Nx project boundary, and Angular SSR entrypoint instead of introducing an unrelated builder migration."
-          : "Preserve the existing @angular-devkit/build-angular:browser build system instead of introducing an unrelated builder migration.",
+          : isAngularCrud
+            ? "Preserve the existing @angular-devkit/build-angular:browser build system instead of introducing an unrelated builder migration."
+            : "Preserve the selected workspace builder and project boundaries instead of introducing an unrelated migration.",
         "Keep package-lock.json and structured command-registry references authoritative; Planning never emits raw shell authority.",
         "Require build/test validation, independent review, human gates, repair validation, candidate promotion, and stage sealing before advancing.",
         isAngularMovies
           ? "Carry the Angular Movies SSR, lazy route, service-worker, and browser-flow invariants through stage validation."
-          : "Carry the Angular 11 CRUD application invariants—lazy UsersModule, Reactive Forms, HttpClient/interceptor behavior, and CRUD routes—through stage validation.",
+          : isAngularCrud
+            ? "Carry the Angular 11 CRUD application invariants—lazy UsersModule, Reactive Forms, HttpClient/interceptor behavior, and CRUD routes—through stage validation."
+            : `Carry the selected Angular ${run.sourceMajor} workspace invariants through stage validation.`,
       ],
       risks: [
         isAngularMovies
           ? "The Angular 19 SSR CommonEngine import boundary is a source-grounded repair checkpoint."
-          : "TSLint/Codelyzer and Protractor require governed tooling transitions at later majors.",
+          : isAngularCrud
+            ? "TSLint/Codelyzer and Protractor require governed tooling transitions at later majors."
+            : "Source tooling and third-party compatibility require governed review at later majors.",
         isAngularMovies
           ? "SSR, prerender, service-worker, and browser-flow evidence must remain equivalent after each stage."
-          : "The source has no unit specs, so route/service/E2E/build evidence has greater importance until coverage improves.",
+          : isAngularCrud
+            ? "The source has no unit specs, so route/service/E2E/build evidence has greater importance until coverage improves."
+            : "Source test, route, and build evidence must be weighted according to the selected workspace authorities until coverage is confirmed.",
         "Runtime/catalogue drift must be revalidated immediately before each stage starts.",
         "Third-party and RxJS compatibility may require bounded dependency or source repair; force resolution remains forbidden.",
       ],
       unresolvedQuestions: [
-        "The exact timing of legacy lint/E2E replacement remains stage-dependent and must follow the relevant Angular/tooling compatibility boundary.",
+        isAngularCrud
+          ? "The exact timing of legacy lint/E2E replacement remains stage-dependent and must follow the relevant Angular/tooling compatibility boundary."
+          : "The exact timing of source-tooling transitions remains stage-dependent and must follow the selected workspace compatibility evidence.",
         "Later-stage third-party compatibility outcomes remain governed runtime evidence, not assumptions encoded by Planning.",
       ],
     },
@@ -250,6 +264,36 @@ const initialFeasibility: AngularFeasibilityModel = {
   warnings: [],
 };
 
+function initialFeasibilityFor(
+  sourceProfile: AngularSourceProfileId,
+): AngularFeasibilityModel {
+  if (sourceProfile === "ANGULAR_MOVIES") {
+    return {
+      status: "WAITING",
+      coreCompatibility: "SUPPORTED",
+      runtimeCompatibility: "SUPPORTED",
+      thirdPartySummary:
+        "Angular Movies dependencies, Nx/RxAngular, SSR, and browser-flow authorities will be classified during feasibility review.",
+      lockfileAuthority: "package-lock.json",
+      warnings: [],
+    };
+  }
+
+  if (sourceProfile === "GENERIC") {
+    return {
+      status: "WAITING",
+      coreCompatibility: "SUPPORTED",
+      runtimeCompatibility: "SUPPORTED",
+      thirdPartySummary:
+        "Selected Angular workspace dependencies and tooling authorities will be classified during feasibility review.",
+      lockfileAuthority: "package-lock.json",
+      warnings: [],
+    };
+  }
+
+  return initialFeasibility;
+}
+
 export function createAngularRunModel(seed: AngularRunSeed): AngularRunModel {
   const isCompleted = seed.state === "COMPLETED";
   const isCancelled = seed.state === "CANCELLED";
@@ -270,9 +314,15 @@ export function createAngularRunModel(seed: AngularRunSeed): AngularRunModel {
       G05: gate(seed, "G05", seed.state === "COMPLETED" ? "APPROVED" : "LOCKED"),
       G06: gate(seed, "G06", seed.state === "COMPLETED" ? "APPROVED" : "LOCKED"),
     },
-    baseline: seed.state === "COMPLETED" ? completedBaseline(seed.sourceProfile) : initialBaseline(),
-    analysis: seed.state === "COMPLETED" ? completedAnalysis("APPROVED", seed.sourceProfile) : initialAnalysis,
-    feasibility: seed.state === "COMPLETED" ? { ...completedFeasibility(seed.sourceProfile) } : initialFeasibility,
+    baseline: seed.state === "COMPLETED"
+      ? completedBaseline(seed.sourceProfile, seed.sourceMajor, seed.targetMajor)
+      : initialBaseline(),
+    analysis: seed.state === "COMPLETED"
+      ? completedAnalysis("APPROVED", seed.sourceProfile, seed.sourceMajor, seed.targetMajor)
+      : initialAnalysis,
+    feasibility: seed.state === "COMPLETED"
+      ? { ...completedFeasibility(seed.sourceProfile, seed.sourceMajor, seed.targetMajor) }
+      : initialFeasibilityFor(seed.sourceProfile),
     planning: seed.state === "COMPLETED"
       ? [
           buildAngularPlanningRevision(
@@ -328,6 +378,8 @@ export function createAngularRunModel(seed: AngularRunSeed): AngularRunModel {
 
 export function completedBaseline(
   sourceProfile: AngularSourceProfileId = "ANGULAR11_CRUD",
+  sourceMajor: AngularMajor = 11,
+  targetMajor: AngularMajor = 12,
 ): AngularBaselineModel {
   if (sourceProfile === "ANGULAR_MOVIES") {
     return {
@@ -344,6 +396,10 @@ export function completedBaseline(
     };
   }
 
+  if (sourceProfile === "GENERIC") {
+    return completedGenericBaseline(sourceMajor, targetMajor);
+  }
+
   return {
     outcome: "QUALIFIED_WITH_GAPS",
     knownFailures: [],
@@ -355,6 +411,124 @@ export function completedBaseline(
       ...step,
       status: step.id === "tests" ? "COVERAGE_GAP" as const : "PASS" as const,
     })),
+  };
+}
+
+function completedGenericBaseline(
+  sourceMajor: AngularMajor,
+  targetMajor: AngularMajor,
+): AngularBaselineModel {
+  return {
+    outcome: "QUALIFIED_WITH_GAPS",
+    knownFailures: [],
+    knownGaps: [
+      `The selected Angular ${sourceMajor} workspace test and lint authorities remain evidence-bound; source-specific coverage gaps require review.`,
+      `Angular ${sourceMajor} -> Angular ${targetMajor} requires runtime and behavior parity evidence at each adjacent-major stage.`,
+    ],
+    steps: initialBaseline().steps.map((step) => ({
+      ...step,
+      status: "PASS" as const,
+    })),
+  };
+}
+
+function genericApplicationProfile(sourceMajor: AngularMajor): AngularApplicationProfile {
+  return {
+    repository: "selected source workspace",
+    revision: "approved preflight revision",
+    applicationName: "angular-application",
+    angular: `${sourceMajor}.x`,
+    angularCli: `${sourceMajor}.x`,
+    buildAngular: "resolved during baseline",
+    typescript: "resolved during baseline",
+    rxjs: "resolved during baseline",
+    zoneJs: "resolved during baseline",
+    projects: 1,
+    lazyFeatureModules: 0,
+    crudOperations: 0,
+    routes: [],
+    architecture: ["Source-defined Angular workspace architecture"],
+    tooling: {
+      unit: "Source-defined test authority",
+      lint: "Source-defined lint authority",
+      e2e: "Source-defined browser-flow authority",
+    },
+  };
+}
+
+function completedGenericAnalysis(
+  status: AngularAnalysisModel["status"],
+  sourceMajor: AngularMajor,
+  targetMajor: AngularMajor,
+): AngularAnalysisModel {
+  return {
+    revision: 1,
+    status,
+    facts: [
+      `Selected Angular ${sourceMajor}.x source workspace analyzed.`,
+      `Requested Angular ${sourceMajor} -> Angular ${targetMajor} route bound.`,
+      "Source-defined workspace topology and toolchain authorities registered.",
+      "package-lock.json remains the package authority when present.",
+    ],
+    risks: [
+      "Each adjacent stage must resolve exact framework, runtime, and dependency cohorts from the prior sealed output.",
+      "Source-specific route and runtime parity require validation at every stage boundary.",
+      "Third-party compatibility outcomes remain governed evidence rather than planning assumptions.",
+    ],
+    unknowns: [
+      "Exact dependency and runtime cohorts remain stage-scoped until the compatibility catalogue resolves them.",
+    ],
+    reviewerVerdict: "ACCEPT",
+    summary:
+      `The selected Angular ${sourceMajor}.x source workspace is analyzed for the requested Angular ${sourceMajor} -> Angular ${targetMajor} adjacent-major route. Source-specific topology, dependencies, tooling, and validation authorities remain bound to evidence.`,
+    confidence: "HIGH",
+    proposer: llmProvenance("phase_proposer", "SUCCEEDED", 3500, 2480, 648),
+    reviewer: llmProvenance("phase_reviewer", "SUCCEEDED", 3400, 1600, 348),
+    applicationProfile: genericApplicationProfile(sourceMajor),
+    findings: [
+      {
+        id: "selected-workspace",
+        category: "ARCHITECTURE",
+        severity: "INFO",
+        title: "Preserve selected workspace boundaries",
+        evidence: `The approved preflight identifies an Angular ${sourceMajor}.x source workspace for analysis.`,
+        impact: "Keep source roots, project boundaries, and entrypoints stable unless an owned migration requires a change.",
+      },
+      {
+        id: "adjacent-route",
+        category: "ROUTING",
+        severity: "WATCH",
+        title: "Validate the requested adjacent-major route",
+        evidence: `The requested route is Angular ${sourceMajor} -> Angular ${targetMajor}.`,
+        impact: "Verify route behavior and runtime parity after every adjacent-major stage.",
+      },
+      {
+        id: "dependency-envelope",
+        category: "DEPENDENCY",
+        severity: "WATCH",
+        title: "Resolve the source dependency envelope per stage",
+        evidence: "The selected workspace dependency and lockfile authorities are carried into compatibility review.",
+        impact: "Do not force dependency resolution or replace source tooling without governed evidence.",
+      },
+    ],
+  };
+}
+
+function completedGenericFeasibility(
+  sourceMajor: AngularMajor,
+  targetMajor: AngularMajor,
+): AngularFeasibilityModel {
+  return {
+    status: "APPROVED",
+    coreCompatibility: "SUPPORTED",
+    runtimeCompatibility: "SUPPORTED",
+    thirdPartySummary:
+      `Selected Angular ${sourceMajor} workspace dependency envelope tracked for Angular ${sourceMajor} -> Angular ${targetMajor}; exact third-party cohorts remain stage-scoped.`,
+    lockfileAuthority: "package-lock.json",
+    warnings: [
+      "Source-specific tooling transitions remain governed inside the affected adjacent-major stages.",
+      `Angular ${sourceMajor} -> Angular ${targetMajor} requires runtime, build, test, and behavior parity evidence at each stage boundary.`,
+    ],
   };
 }
 
@@ -472,9 +646,15 @@ function completedAngularMoviesAnalysis(
 export function completedAnalysis(
   status: AngularAnalysisModel["status"] = "APPROVED",
   sourceProfile: AngularSourceProfileId = "ANGULAR11_CRUD",
+  sourceMajor: AngularMajor = 11,
+  targetMajor: AngularMajor = 12,
 ): AngularAnalysisModel {
   if (sourceProfile === "ANGULAR_MOVIES") {
     return completedAngularMoviesAnalysis(status);
+  }
+
+  if (sourceProfile === "GENERIC") {
+    return completedGenericAnalysis(status, sourceMajor, targetMajor);
   }
 
   return {
@@ -607,6 +787,8 @@ export function completedAnalysis(
 
 export function completedFeasibility(
   sourceProfile: AngularSourceProfileId = "ANGULAR11_CRUD",
+  sourceMajor: AngularMajor = 11,
+  targetMajor: AngularMajor = 12,
 ): AngularFeasibilityModel {
   if (sourceProfile === "ANGULAR_MOVIES") {
     return {
@@ -621,6 +803,10 @@ export function completedFeasibility(
         "SSR, prerender, service-worker, and browser-flow checks remain required at each adjacent-major boundary.",
       ],
     };
+  }
+
+  if (sourceProfile === "GENERIC") {
+    return completedGenericFeasibility(sourceMajor, targetMajor);
   }
 
   return {
@@ -873,7 +1059,23 @@ export function completeAngularBaselineExecution(
           "Baseline test matrix completed.",
         ]),
       ]
-    : [
+    : run.sourceProfile === "GENERIC"
+      ? [
+          baselineCommand(run.id, "BASELINE_INSTALL", "npm ci", now, [
+            "Lockfile authority accepted.",
+            "Angular " + run.sourceMajor + " dependency tree materialized from the selected workspace.",
+            "Install completed.",
+          ]),
+          baselineCommand(run.id, "BASELINE_BUILD", "npm run build", now, [
+            "Angular " + run.sourceMajor + " baseline build completed with exit code 0.",
+            "Source builder and production configuration preserved.",
+          ]),
+          baselineCommand(run.id, "BASELINE_TEST", "npm test", now, [
+            "Test authority resolved from the selected workspace scripts.",
+            "Angular " + run.sourceMajor + " baseline test evidence recorded.",
+          ]),
+        ]
+      : [
         baselineCommand(run.id, "BASELINE_INSTALL", "npm ci", now, [
           "Lockfile authority accepted.",
           "Install completed.",
@@ -893,7 +1095,7 @@ export function completeAngularBaselineExecution(
     currentGate: "G03",
     currentAction: "Review qualified baseline and known source failures",
     gates: unlock(run.gates, "G03"),
-    baseline: completedBaseline(run.sourceProfile),
+    baseline: completedBaseline(run.sourceProfile, run.sourceMajor, run.targetMajor),
     liveExecution: undefined,
     operations: {
       ...run.operations,
@@ -921,7 +1123,12 @@ export function completeAngularAnalysisExecution(
   run: AngularRunModel,
   now: string,
 ): AngularRunModel {
-  const analysis = completedAnalysis("READY_FOR_REVIEW", run.sourceProfile);
+  const analysis = completedAnalysis(
+    "READY_FOR_REVIEW",
+    run.sourceProfile,
+    run.sourceMajor,
+    run.targetMajor,
+  );
   return {
     ...run,
     phase: "ANALYSIS",
@@ -955,7 +1162,10 @@ export function completeAngularFeasibilityExecution(
     currentGate: "G05",
     currentAction: "Review migration readiness and compatibility evidence",
     gates: unlock(run.gates, "G05"),
-    feasibility: { ...completedFeasibility(run.sourceProfile), status: "READY_FOR_REVIEW" },
+    feasibility: {
+      ...completedFeasibility(run.sourceProfile, run.sourceMajor, run.targetMajor),
+      status: "READY_FOR_REVIEW",
+    },
     liveExecution: undefined,
     evidence: [
       ...run.evidence,
