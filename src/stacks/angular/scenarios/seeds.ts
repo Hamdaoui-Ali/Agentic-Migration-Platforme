@@ -15,15 +15,42 @@ import {
   angularLiveExecutionDuration,
 } from "../workflow/live.ts";
 
+const ANGULAR_MOVIES_PRIMARY_PREFLIGHT_IDS = new Set([
+  "preflight-angular-movies-18-21",
+  "preflight-movie-angular-18-21",
+]);
+
+const ANGULAR_MOVIES_PRIMARY_ROUTE_IDS = new Set([
+  "run-angular-action",
+  "run-angular-movies-18-21",
+  "run-movie-angular-18-21",
+]);
+
 export function seedAngularPreflight(id: string): AngularPreflight {
-  const primary = prepareAngularPreflight({
-    runName: "Angular 11 CRUD Example",
-    sourcePath: "/workspace/angular-11-crud-example",
-    outputParent: "/workspace/migration-output",
-    sourceMajor: 11,
-    targetMajor: 21,
-  });
+  const primary = ANGULAR_MOVIES_PRIMARY_PREFLIGHT_IDS.has(id)
+    ? prepareAngularPreflight({
+        runName: "Angular Movies",
+        sourcePath: "/workspace/angular-movies",
+        outputParent: "/workspace/migration-output",
+        sourceMajor: 18,
+        targetMajor: 21,
+      })
+    : prepareAngularPreflight({
+        runName: "Angular 11 CRUD Example",
+        sourcePath: "/workspace/angular-11-crud-example",
+        outputParent: "/workspace/migration-output",
+        sourceMajor: 11,
+        targetMajor: 21,
+      });
   return { ...primary, id };
+}
+
+export function isAngularMoviesPrimaryPreflightId(id: string): boolean {
+  return ANGULAR_MOVIES_PRIMARY_PREFLIGHT_IDS.has(id);
+}
+
+export function isAngularMoviesPrimaryRunId(id: string): boolean {
+  return ANGULAR_MOVIES_PRIMARY_ROUTE_IDS.has(id);
 }
 
 function approvedRunSeed(): AngularRunSeed {
@@ -35,22 +62,10 @@ function approvedRunSeed(): AngularRunSeed {
 }
 
 function angularMoviesApprovedRunSeed(): AngularRunSeed {
-  const preflight = prepareAngularPreflight({
-    runName: "Angular Movies",
-    sourcePath: "/workspace/angular-movies",
-    outputParent: "/workspace/migration-output",
-    sourceMajor: 18,
-    targetMajor: 21,
-  });
+  const preflight = seedAngularPreflight("preflight-angular-movies-18-21");
   const approved = applyG01Decision(preflight, "APPROVE");
   return createRunFromApprovedPreflight(approved);
 }
-
-const ANGULAR_MOVIES_PRIMARY_ROUTE_IDS = new Set([
-  "run-angular-action",
-  "run-angular-movies-18-21",
-  "run-movie-angular-18-21",
-]);
 
 function finishLive(run: AngularRunModel): AngularRunModel {
   if (!run.liveExecution) return run;

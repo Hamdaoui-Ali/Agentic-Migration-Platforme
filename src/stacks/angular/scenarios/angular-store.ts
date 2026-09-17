@@ -2,12 +2,15 @@
 
 import type { AngularPreflight, AngularRunSeed } from "../domain/types";
 import type { AngularRunModel } from "../domain/run-types";
-import { createAngularRunModel } from "../workflow/run";
-import { prepareProvenStage } from "../workflow/proven";
+import { stableDisplayChecksum } from "../../../scenarios/runtime/checksum.ts";
+import { createAngularRunModel } from "../workflow/run.ts";
+import { prepareProvenStage } from "../workflow/proven.ts";
 import {
+  isAngularMoviesPrimaryPreflightId,
+  isAngularMoviesPrimaryRunId,
   seedAngularPreflight,
   seedAngularRun,
-} from "./seeds";
+} from "./seeds.ts";
 
 interface AngularPresentationState {
   preflights: Record<string, AngularPreflight>;
@@ -31,6 +34,97 @@ function asRunModel(run: AngularRunModel | AngularRunSeed): AngularRunModel {
       stageHistory: [],
     },
   };
+}
+
+function archiveSuffix(value: unknown): string {
+  return stableDisplayChecksum(JSON.stringify(value)).slice(0, 12);
+}
+
+function isCorrectAngularMoviesPreflight(
+  id: string,
+  preflight: AngularPreflight,
+): boolean {
+  return (
+    isAngularMoviesPrimaryPreflightId(id) &&
+    preflight.sourceProfile === "ANGULAR_MOVIES" &&
+    preflight.sourceMajor === 18 &&
+    preflight.targetMajor === 21
+  );
+}
+
+function restoreAngularMoviesPreflight(
+  id: string,
+  stale: AngularPreflight,
+  state: AngularPresentationState,
+): AngularPreflight {
+  const archiveId = `${id}-archived-${archiveSuffix(stale)}`;
+  const corrected = seedAngularPreflight(id);
+  const migrated = {
+    ...corrected,
+    evidence: [
+      ...corrected.evidence,
+      {
+        id: `${id}-source-profile-corrected`,
+        category: "SOURCE" as const,
+        title: "Angular Movies source profile corrected",
+        summary:
+          "An incompatible persisted source profile was archived before restoring the Angular Movies 18 -> 21 route.",
+        timestamp: new Date().toISOString(),
+        checksum: stableDisplayChecksum(`${id}:source-profile-corrected:${archiveId}`),
+      },
+    ],
+  };
+  saveAngularState({
+    ...state,
+    preflights: {
+      ...state.preflights,
+      [archiveId]: stale,
+      [id]: migrated,
+    },
+  });
+  return migrated;
+}
+
+function isCorrectAngularMoviesRun(id: string, run: AngularRunModel): boolean {
+  return (
+    isAngularMoviesPrimaryRunId(id) &&
+    run.sourceProfile === "ANGULAR_MOVIES" &&
+    run.sourceMajor === 18 &&
+    run.targetMajor === 21
+  );
+}
+
+function restoreAngularMoviesRun(
+  id: string,
+  stale: AngularRunModel,
+  state: AngularPresentationState,
+): AngularRunModel {
+  const archiveId = `${id}-archived-${archiveSuffix(stale)}`;
+  const corrected = seedAngularRun(id);
+  const migrated = {
+    ...corrected,
+    evidence: [
+      ...corrected.evidence,
+      {
+        id: `${id}-source-profile-corrected`,
+        category: "SOURCE" as const,
+        title: "Angular Movies source profile corrected",
+        summary:
+          "An incompatible persisted source profile was archived before restoring the Angular Movies 18 -> 21 route.",
+        timestamp: new Date().toISOString(),
+        checksum: stableDisplayChecksum(`${id}:source-profile-corrected:${archiveId}`),
+      },
+    ],
+  };
+  saveAngularState({
+    ...state,
+    runs: {
+      ...state.runs,
+      [archiveId]: stale,
+      [id]: migrated,
+    },
+  });
+  return migrated;
 }
 
 export function loadAngularState(): AngularPresentationState {
@@ -66,17 +160,33 @@ export function putAngularRun(run: AngularRunModel | AngularRunSeed): AngularPre
 }
 
 export function getAngularPreflight(id: string): AngularPreflight {
-  const existing = loadAngularState().preflights[id];
-  if (existing) return existing;
+  const state = loadAngularState();
+  const existing = state.preflights[id];
+  if (existing) {
+    if (
+      isAngularMoviesPrimaryPreflightId(id) &&
+      !isCorrectAngularMoviesPreflight(id, existing)
+    ) {
+      return restoreAngularMoviesPreflight(id, existing, state);
+    }
+    return existing;
+  }
   const seeded = seedAngularPreflight(id);
   putAngularPreflight(seeded);
   return seeded;
 }
 
 export function getAngularRun(id: string): AngularRunModel {
-  const existing = loadAngularState().runs[id];
+  const state = loadAngularState();
+  const existing = state.runs[id];
   if (existing) {
     let model = asRunModel(existing);
+    if (
+      isAngularMoviesPrimaryRunId(id) &&
+      !isCorrectAngularMoviesRun(id, model)
+    ) {
+      return restoreAngularMoviesRun(id, model, state);
+    }
     if (
       model.phase === "STAGE_PREPARATION" &&
       !model.stageExecution &&
