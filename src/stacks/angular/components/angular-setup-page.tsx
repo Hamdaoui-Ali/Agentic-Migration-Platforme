@@ -23,17 +23,26 @@ import {
   writeAutomationPreference,
 } from "@/lib/automation";
 import { ANGULAR_MAJORS, type AngularMajor } from "../domain/types";
-import { computeAngularRoute, prepareAngularPreflight } from "../workflow/setup";
+import {
+  computeAngularRoute,
+  createEmptyAngularSetupValues,
+  isAngularSetupReady,
+  prepareAngularPreflight,
+} from "../workflow/setup";
 import { putAngularPreflight } from "../scenarios/angular-store";
 import { AngularRouteBoard } from "./angular-route-board";
 
 export function AngularSetupPage() {
   const router = useRouter();
-  const [runName, setRunName] = useState("Angular Movies");
-  const [sourcePath, setSourcePath] = useState("/workspace/angular-movies");
-  const [outputParent, setOutputParent] = useState("/workspace/migration-output");
-  const [sourceMajor, setSourceMajor] = useState<AngularMajor>(18);
-  const [targetMajor, setTargetMajor] = useState<AngularMajor>(21);
+  const [runName, setRunName] = useState(() => createEmptyAngularSetupValues().runName);
+  const [sourcePath, setSourcePath] = useState(() => createEmptyAngularSetupValues().sourcePath);
+  const [outputParent, setOutputParent] = useState(() => createEmptyAngularSetupValues().outputParent);
+  const [sourceMajor, setSourceMajor] = useState<AngularMajor | "">(
+    () => createEmptyAngularSetupValues().sourceMajor,
+  );
+  const [targetMajor, setTargetMajor] = useState<AngularMajor | "">(
+    () => createEmptyAngularSetupValues().targetMajor,
+  );
   const [error, setError] = useState<string | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticRunState>(() => createDiagnosticState());
   const diagnosticTimerRef = useRef<number | null>(null);
@@ -43,24 +52,24 @@ export function AngularSetupPage() {
     getAutomationPreferenceServerSnapshot,
   );
 
-  const route = useMemo(
-    () => computeAngularRoute(sourceMajor, targetMajor),
-    [sourceMajor, targetMajor],
-  );
+  const route = useMemo(() => {
+    if (sourceMajor === "" || targetMajor === "") return [];
+    return computeAngularRoute(sourceMajor, targetMajor);
+  }, [sourceMajor, targetMajor]);
 
-  const preview = useMemo(
-    () =>
-      prepareAngularPreflight({
-        runName,
-        sourcePath,
-        outputParent,
-        sourceMajor,
-        targetMajor,
-      }),
+  const setupValues = useMemo(
+    () => ({ runName, sourcePath, outputParent, sourceMajor, targetMajor }),
     [runName, sourcePath, outputParent, sourceMajor, targetMajor],
   );
+  const setupReady = isAngularSetupReady(setupValues);
 
-  const targetOptions = ANGULAR_MAJORS.filter((major) => major > sourceMajor);
+  const preview = useMemo(
+    () => (setupReady ? prepareAngularPreflight(setupValues) : null),
+    [setupReady, setupValues],
+  );
+
+  const targetOptions =
+    sourceMajor === "" ? [] : ANGULAR_MAJORS.filter((major) => major > sourceMajor);
 
   useEffect(() => {
     return () => {
@@ -79,7 +88,7 @@ export function AngularSetupPage() {
   }
 
   function runDiagnostics() {
-    if (diagnosticTimerRef.current !== null) return;
+    if (!preview || diagnosticTimerRef.current !== null) return;
     const total = preview.environment.length;
     let nextState: DiagnosticRunState = { status: "RUNNING", revealed: 0 };
     setDiagnostics(nextState);
@@ -96,24 +105,22 @@ export function AngularSetupPage() {
     }, intervalMs);
   }
 
-  function handleSourceChange(value: AngularMajor) {
+  function handleSourceChange(value: AngularMajor | "") {
     resetDiagnostics();
     setSourceMajor(value);
-    if (targetMajor <= value) {
-      setTargetMajor((ANGULAR_MAJORS.find((major) => major > value) ?? 21) as AngularMajor);
+    if (value === "" || targetMajor === "" || targetMajor <= value) {
+      setTargetMajor("");
     }
   }
 
   function reviewReadiness() {
     try {
       setError(null);
-      const preflight = prepareAngularPreflight({
-        runName,
-        sourcePath,
-        outputParent,
-        sourceMajor,
-        targetMajor,
-      });
+      if (!setupReady || !preview) {
+        setError("Complete all project fields before reviewing production readiness.");
+        return;
+      }
+      const preflight = prepareAngularPreflight(setupValues);
       putAngularPreflight(preflight);
       router.push(`/angular/preflights/${preflight.id}`);
     } catch (caught) {
@@ -138,11 +145,25 @@ export function AngularSetupPage() {
         <Panel className="mb-6 bg-[var(--mf-surface-subtle)]">
           <PanelHeader
             eyebrow="Calculated route"
-            title={`Angular ${sourceMajor} → Angular ${targetMajor}`}
-            description="Every requested major is executed as an adjacent, evidence-backed stage."
+            title={
+              route.length > 0
+                ? `Angular ${sourceMajor} → Angular ${targetMajor}`
+                : "Choose a source and target"
+            }
+            description={
+              route.length > 0
+                ? "Every requested major is executed as an adjacent, evidence-backed stage."
+                : "Select both Angular versions to preview the adjacent-major route."
+            }
           />
           <div className="mt-5">
-            <AngularRouteBoard route={route} />
+            {route.length > 0 ? (
+              <AngularRouteBoard route={route} />
+            ) : (
+              <p className="rounded-lg border border-dashed border-[var(--mf-border-strong)] p-4 text-sm text-[var(--mf-text-muted)]">
+                The route preview will appear after you select the detected source and requested target versions.
+              </p>
+            )}
           </div>
         </Panel>
 
@@ -156,21 +177,44 @@ export function AngularSetupPage() {
               />
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <FormField label="Run name">
-                  <input className={fieldClassName} value={runName} onChange={(event) => { resetDiagnostics(); setRunName(event.target.value); }} />
+                  <input
+                    className={fieldClassName}
+                    value={runName}
+                    placeholder="Enter a name for this migration"
+                    required
+                    onChange={(event) => { resetDiagnostics(); setRunName(event.target.value); }}
+                  />
                 </FormField>
                 <FormField label="Source application">
-                  <input className={fieldClassName} value={sourcePath} onChange={(event) => { resetDiagnostics(); setSourcePath(event.target.value); }} />
+                  <input
+                    className={fieldClassName}
+                    value={sourcePath}
+                    placeholder="/path/to/angular-application"
+                    required
+                    onChange={(event) => { resetDiagnostics(); setSourcePath(event.target.value); }}
+                  />
                 </FormField>
                 <FormField label="Output parent">
-                  <input className={fieldClassName} value={outputParent} onChange={(event) => { resetDiagnostics(); setOutputParent(event.target.value); }} />
+                  <input
+                    className={fieldClassName}
+                    value={outputParent}
+                    placeholder="/path/to/migration-output"
+                    required
+                    onChange={(event) => { resetDiagnostics(); setOutputParent(event.target.value); }}
+                  />
                 </FormField>
                 <div className="grid grid-cols-2 gap-3">
                   <FormField label="Detected source">
                     <select
                       className={fieldClassName}
                       value={sourceMajor}
-                      onChange={(event) => handleSourceChange(Number(event.target.value) as AngularMajor)}
+                      required
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        handleSourceChange(value === "" ? "" : Number(value) as AngularMajor);
+                      }}
                     >
+                      <option value="">Select source version</option>
                       {ANGULAR_MAJORS.slice(0, -1).map((major) => (
                         <option key={major} value={major}>Angular {major}</option>
                       ))}
@@ -180,8 +224,15 @@ export function AngularSetupPage() {
                     <select
                       className={fieldClassName}
                       value={targetMajor}
-                      onChange={(event) => { resetDiagnostics(); setTargetMajor(Number(event.target.value) as AngularMajor); }}
+                      required
+                      disabled={sourceMajor === ""}
+                      onChange={(event) => {
+                        resetDiagnostics();
+                        const value = event.target.value;
+                        setTargetMajor(value === "" ? "" : Number(value) as AngularMajor);
+                      }}
                     >
+                      <option value="">Select target version</option>
                       {targetOptions.map((major) => (
                         <option key={major} value={major}>Angular {major}</option>
                       ))}
@@ -197,7 +248,13 @@ export function AngularSetupPage() {
                 title="Environment diagnostics"
                 description="Required runtime, CLI, browser, catalogue, and AI capabilities are verified before production readiness can be reviewed."
               />
-              <EnvironmentDiagnostics checks={preview.environment} state={diagnostics} onRun={runDiagnostics} />
+              {preview ? (
+                <EnvironmentDiagnostics checks={preview.environment} state={diagnostics} onRun={runDiagnostics} />
+              ) : (
+                <p className="mt-5 rounded-lg border border-dashed border-[var(--mf-border-strong)] p-4 text-sm text-[var(--mf-text-muted)]">
+                  Complete all project fields before running environment diagnosis.
+                </p>
+              )}
             </Panel>
 
             <Panel>
@@ -231,20 +288,26 @@ export function AngularSetupPage() {
                 title="Source review"
                 description="Deterministic source analysis identifies the Angular family, workspace topology, builder, lockfile authority, and dependency footprint."
               />
-              <dl className="mt-5">
-                <DetailRow label="Application" value={preview.sourceAnalysis.applicationName} mono />
-                <DetailRow label="Detected Angular" value={preview.sourceAnalysis.detectedVersion} />
-                <DetailRow label="Angular CLI" value={preview.sourceAnalysis.angularCliVersion} />
-                <DetailRow label="TypeScript / RxJS" value={`${preview.sourceAnalysis.typescriptVersion} / ${preview.sourceAnalysis.rxjsVersion}`} />
-                <DetailRow label="Workspace" value={preview.sourceAnalysis.workspace} />
-                <DetailRow label="Projects" value={preview.sourceAnalysis.projects} />
-                <DetailRow label="Lazy feature modules" value={preview.sourceAnalysis.lazyFeatureModules} />
-                <DetailRow label="CRUD HTTP operations" value={preview.sourceAnalysis.crudOperations} />
-                <DetailRow label="Builder" value={preview.sourceAnalysis.builder} mono />
-                <DetailRow label="Lockfile" value={preview.sourceAnalysis.lockfile} mono />
-                <DetailRow label="Manifest entries" value={`${preview.sourceAnalysis.dependencyCount} total · ${preview.sourceAnalysis.thirdPartyPackages} non-Angular`} />
-                <DetailRow label="Confidence" value={<StatusBadge label={preview.sourceAnalysis.confidence} tone="success" />} />
-              </dl>
+              {preview ? (
+                <dl className="mt-5">
+                  <DetailRow label="Application" value={preview.sourceAnalysis.applicationName} mono />
+                  <DetailRow label="Detected Angular" value={preview.sourceAnalysis.detectedVersion} />
+                  <DetailRow label="Angular CLI" value={preview.sourceAnalysis.angularCliVersion} />
+                  <DetailRow label="TypeScript / RxJS" value={`${preview.sourceAnalysis.typescriptVersion} / ${preview.sourceAnalysis.rxjsVersion}`} />
+                  <DetailRow label="Workspace" value={preview.sourceAnalysis.workspace} />
+                  <DetailRow label="Projects" value={preview.sourceAnalysis.projects} />
+                  <DetailRow label="Lazy feature modules" value={preview.sourceAnalysis.lazyFeatureModules} />
+                  <DetailRow label="CRUD HTTP operations" value={preview.sourceAnalysis.crudOperations} />
+                  <DetailRow label="Builder" value={preview.sourceAnalysis.builder} mono />
+                  <DetailRow label="Lockfile" value={preview.sourceAnalysis.lockfile} mono />
+                  <DetailRow label="Manifest entries" value={`${preview.sourceAnalysis.dependencyCount} total · ${preview.sourceAnalysis.thirdPartyPackages} non-Angular`} />
+                  <DetailRow label="Confidence" value={<StatusBadge label={preview.sourceAnalysis.confidence} tone="success" />} />
+                </dl>
+              ) : (
+                <p className="mt-5 rounded-lg border border-dashed border-[var(--mf-border-strong)] p-4 text-sm text-[var(--mf-text-muted)]">
+                  Source analysis will appear after all project fields are filled.
+                </p>
+              )}
             </Panel>
           </div>
 
@@ -252,19 +315,19 @@ export function AngularSetupPage() {
             <Panel>
               <PanelHeader eyebrow="Review" title="Production readiness" />
               <dl className="mt-5">
-                <DetailRow label="Source" value={`Angular ${sourceMajor}`} />
-                <DetailRow label="Target" value={`Angular ${targetMajor}`} />
-                <DetailRow label="Stages" value={route.length} />
+                <DetailRow label="Source" value={sourceMajor === "" ? "Not selected" : `Angular ${sourceMajor}`} />
+                <DetailRow label="Target" value={targetMajor === "" ? "Not selected" : `Angular ${targetMajor}`} />
+                <DetailRow label="Stages" value={route.length || "—"} />
                 <DetailRow label="Source protection" value="Read-only" />
-                <DetailRow label="Readiness" value={<StatusBadge label={preview.status} />} />
-                <DetailRow label="Diagnostics" value={<StatusBadge label={diagnostics.status === "COMPLETE" ? "READY" : "PENDING"} />} />
+                <DetailRow label="Readiness" value={<StatusBadge label={preview?.status ?? "INCOMPLETE"} />} />
+                <DetailRow label="Diagnostics" value={<StatusBadge label={!preview ? "LOCKED" : diagnostics.status === "COMPLETE" ? "READY" : "PENDING"} />} />
                 <DetailRow label="Automation" value={automationPreference === "AUTO_APPROVE_ELIGIBLE" ? "Eligible gates" : "Manual approvals"} />
-                <DetailRow label="Warnings" value={preview.warnings.length} />
-                <DetailRow label="Blockers" value={preview.blockers.length} />
-                <DetailRow label="Evidence" value={preview.evidence.length} />
+                <DetailRow label="Warnings" value={preview?.warnings.length ?? 0} />
+                <DetailRow label="Blockers" value={preview?.blockers.length ?? 0} />
+                <DetailRow label="Evidence" value={preview?.evidence.length ?? 0} />
               </dl>
 
-              {preview.warnings.length > 0 ? (
+              {preview && preview.warnings.length > 0 ? (
                 <div className="mt-4 rounded-lg border border-[var(--mf-warning)]/35 bg-[var(--mf-warning-soft)] p-3 text-xs leading-5 text-[var(--mf-warning)]">
                   {preview.warnings[0]}
                 </div>
@@ -276,7 +339,7 @@ export function AngularSetupPage() {
                 </div>
               ) : null}
 
-              <Button className="mt-5 w-full" onClick={reviewReadiness} disabled={preview.status === "BLOCKED" || diagnostics.status !== "COMPLETE"}>
+              <Button className="mt-5 w-full" onClick={reviewReadiness} disabled={!preview || preview.status === "BLOCKED" || diagnostics.status !== "COMPLETE"}>
                 Review production readiness
               </Button>
               <p className="mt-3 text-center text-[11px] leading-4 text-[var(--mf-text-soft)]">
