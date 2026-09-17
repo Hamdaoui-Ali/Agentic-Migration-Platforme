@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { ThemeScript } from "@/components/shared/theme-script";
 import { AssistantFab } from "@/components/shared/assistant-fab";
+import { AssistantProvider } from "@/components/shared/assistant-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,8 +37,10 @@ export default function RootLayout({
       <body className="min-h-full bg-[var(--mf-page)] text-[var(--mf-text)]">
         <ThemeScript />
         <ThemeProvider>
-          {children}
-          <AssistantFab />
+          <AssistantProvider>
+            {children}
+            <AssistantFab />
+          </AssistantProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "next/navigation";
 
 import { AppShell } from "@/components/shared/app-shell";
+import { useRegisterAssistantSnapshot } from "@/components/shared/assistant-context";
 import { LiveExecutionPanel } from "@/components/shared/live-execution-panel";
 import type { ShellAction } from "@/components/shared/presentation-types";
 import { WorkspaceResetButton } from "@/components/shared/workspace-reset-button";
@@ -54,6 +55,7 @@ import { AngularPipeline } from "./angular-pipeline";
 import { AngularProvenExecution } from "./angular-proven-execution";
 import { AngularRepairWorkspace } from "./angular-repair-workspace";
 import { AngularStageDecisionPanel } from "./angular-stage-decision-panel";
+import { createAngularAssistantSnapshot } from "../workflow/assistant";
 import type {
   AngularRepairReviewInput,
   AngularStageGateDecision,
@@ -83,6 +85,12 @@ export function AngularControlTowerPage() {
   const autoDecisionCompletedRef = useRef<string | null>(null);
   const autoDecisionTimerRef = useRef<number | null>(null);
   const playbackSpeed = usePlaybackSpeed();
+  const assistantSnapshot = useMemo(
+    () => createAngularAssistantSnapshot(run),
+    [run],
+  );
+
+  useRegisterAssistantSnapshot(assistantSnapshot);
 
   const automationPreference = useSyncExternalStore(
     (listener) => subscribeAutomationPreference("angular", listener),
