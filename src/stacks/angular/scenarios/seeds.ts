@@ -46,6 +46,12 @@ function angularMoviesApprovedRunSeed(): AngularRunSeed {
   return createRunFromApprovedPreflight(approved);
 }
 
+const ANGULAR_MOVIES_PRIMARY_ROUTE_IDS = new Set([
+  "run-angular-action",
+  "run-angular-movies-18-21",
+  "run-movie-angular-18-21",
+]);
+
 function finishLive(run: AngularRunModel): AngularRunModel {
   if (!run.liveExecution) return run;
   return advanceAngularLiveExecution(
@@ -68,7 +74,7 @@ export function seedAngularRun(id: string): AngularRunModel {
     });
   }
 
-  const seed = id === "run-angular-action"
+  const seed = ANGULAR_MOVIES_PRIMARY_ROUTE_IDS.has(id)
     ? angularMoviesApprovedRunSeed()
     : approvedRunSeed();
   let model = createAngularRunModel({
