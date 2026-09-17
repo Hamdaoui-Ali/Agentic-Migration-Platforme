@@ -22,6 +22,37 @@ export interface PrepareAngularInput {
   targetMajor: AngularMajor;
 }
 
+export interface AngularSetupValues {
+  runName: string;
+  sourcePath: string;
+  outputParent: string;
+  sourceMajor: AngularMajor | "";
+  targetMajor: AngularMajor | "";
+}
+
+export function createEmptyAngularSetupValues(): AngularSetupValues {
+  return {
+    runName: "",
+    sourcePath: "",
+    outputParent: "",
+    sourceMajor: "",
+    targetMajor: "",
+  };
+}
+
+export function isAngularSetupReady(
+  input: AngularSetupValues,
+): input is PrepareAngularInput {
+  return (
+    input.runName.trim().length > 0 &&
+    input.sourcePath.trim().length > 0 &&
+    input.outputParent.trim().length > 0 &&
+    input.sourceMajor !== "" &&
+    input.targetMajor !== "" &&
+    input.targetMajor > input.sourceMajor
+  );
+}
+
 function assertAngularMajor(value: number): asserts value is AngularMajor {
   if (!ANGULAR_MAJORS.includes(value as AngularMajor)) {
     throw new Error(`Angular ${value} is outside the supported 11–21 range.`);

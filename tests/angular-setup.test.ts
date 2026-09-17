@@ -4,9 +4,36 @@ import test from "node:test";
 import {
   applyG01Decision,
   computeAngularRoute,
+  createEmptyAngularSetupValues,
   createRunFromApprovedPreflight,
+  isAngularSetupReady,
   prepareAngularPreflight,
+  type AngularSetupValues,
 } from "../src/stacks/angular/workflow/setup.ts";
+
+test("Angular setup exposes an empty initial form state", () => {
+  assert.deepEqual(createEmptyAngularSetupValues(), {
+    runName: "",
+    sourcePath: "",
+    outputParent: "",
+    sourceMajor: "",
+    targetMajor: "",
+  });
+});
+
+test("Angular setup becomes ready only after every required field is filled", () => {
+  const incomplete: AngularSetupValues = {
+    runName: "Customer Portal",
+    sourcePath: "/workspace/customer-portal",
+    outputParent: "/workspace/output",
+    sourceMajor: 18,
+    targetMajor: "",
+  };
+  const complete: AngularSetupValues = { ...incomplete, targetMajor: 21 };
+
+  assert.equal(isAngularSetupReady(incomplete), false);
+  assert.equal(isAngularSetupReady(complete), true);
+});
 
 test("Angular 11 to 15 computes four adjacent governed stages", () => {
   const route = computeAngularRoute(11, 15);
