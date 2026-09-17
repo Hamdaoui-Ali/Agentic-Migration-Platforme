@@ -29,6 +29,8 @@ export function createAngularLiveExecution(
   const raw =
     context.sourceProfile === "ANGULAR_MOVIES"
       ? createAngularMoviesLiveExecutionRaw(kind, startedAtMs, context)
+      : context.sourceProfile === "GENERIC"
+        ? createAngularGenericLiveExecutionRaw(kind, startedAtMs, context)
       : createAngularLiveExecutionRaw(kind, startedAtMs, context);
   const minimumDurationMs =
     kind === "PLANNING"
@@ -42,6 +44,19 @@ export function createAngularLiveExecution(
 }
 
 function movieStep(
+  id: string,
+  label: string,
+  node: string,
+  detail: string,
+  durationMs: number,
+  kind: LiveExecutionStep["kind"],
+  logs: string[],
+  extras: Partial<Pick<LiveExecutionStep, "command" | "provider" | "deployment" | "role">> = {},
+): LiveExecutionStep {
+  return { id, label, node, detail, durationMs, kind, logs, ...extras };
+}
+
+function genericStep(
   id: string,
   label: string,
   node: string,
@@ -690,6 +705,411 @@ function createAngularMoviesLiveExecutionRaw(
     startedAtMs,
     steps: phaseSteps[kind],
   };
+}
+
+function createAngularGenericLiveExecutionRaw(
+  kind: AngularLiveExecutionKind,
+  startedAtMs: number,
+  context: AngularLiveContext,
+): AngularLiveExecution {
+  const source = context.source ?? 18;
+  const target = context.target ?? 21;
+  const routeStages = Array.from({ length: Math.max(0, target - source) }, (_, index) => {
+    const stageSource = source + index;
+    return `angular-${stageSource}.x -> angular-${stageSource + 1}.x`;
+  });
+  const routeLabel = routeStages.join(" -> ");
+  const firstTarget = source + 1;
+
+  if (kind === "BASELINE") {
+    return {
+      id: id(kind, startedAtMs),
+      kind,
+      status: "RUNNING",
+      startedAtMs,
+      steps: [
+        genericStep(
+          "generic-baseline-identity",
+          "Bind selected source identity",
+          "baseline.source_identity",
+          `Bind the selected Angular ${source} source workspace and immutable fingerprint.`,
+          1600,
+          "SYSTEM",
+          [
+            `Selected source major: Angular ${source}`,
+            `Requested target major: Angular ${target}`,
+            "Source workspace identity bound from the approved preflight.",
+            "Immutable source fingerprint recorded.",
+          ],
+        ),
+        genericStep(
+          "generic-baseline-manifest",
+          "Inspect selected workspace manifests",
+          "baseline.manifest_inspection",
+          "Read the selected workspace manifests and preserve the source-defined toolchain authority.",
+          1700,
+          "SYSTEM",
+          [
+            `Detected source framework: Angular ${source}.x`,
+            "Angular CLI and build builder authority resolved during baseline.",
+            "TypeScript, RxJS, and zone.js versions remain source-evidence fields until resolved.",
+            "package-lock.json authority confirmed.",
+          ],
+        ),
+        genericStep(
+          "generic-baseline-workspace",
+          "Create isolated baseline workspace",
+          "baseline.workspace.create",
+          "Copy the selected source snapshot into a governed baseline workspace.",
+          1500,
+          "SYSTEM",
+          [
+            "Creating isolated baseline workspace...",
+            "Read-only source boundary preserved.",
+            "Workspace fingerprint bound to the selected source revision.",
+          ],
+        ),
+        genericStep(
+          "generic-baseline-install",
+          "Clean lockfile install",
+          "command.baseline_install",
+          "Install exactly from the selected workspace lockfile authority.",
+          3000,
+          "COMMAND",
+          [
+            "$ npm ci",
+            "Lockfile authority: package-lock.json",
+            `Angular ${source} dependency tree materialized from the selected workspace.`,
+            "exit code 0",
+          ],
+          { command: "npm ci" },
+        ),
+        genericStep(
+          "generic-baseline-build",
+          "Production baseline build",
+          "command.baseline_build",
+          `Build the selected Angular ${source} application with its source-defined production configuration.`,
+          3000,
+          "COMMAND",
+          [
+            "$ npm run build",
+            `Angular ${source} baseline build completed.`,
+            "Source builder and production configuration preserved.",
+            "exit code 0",
+          ],
+          { command: "npm run build" },
+        ),
+        genericStep(
+          "generic-baseline-tests",
+          "Run baseline test authority",
+          "command.baseline_test",
+          "Run the selected workspace test authority and record its source coverage facts.",
+          2500,
+          "COMMAND",
+          [
+            "$ npm test",
+            "Test authority resolved from the selected workspace scripts.",
+            `Angular ${source} baseline test evidence recorded.`,
+          ],
+          { command: "npm test" },
+        ),
+        genericStep(
+          "generic-baseline-lint",
+          "Run baseline lint authority",
+          "command.baseline_lint",
+          "Run the selected workspace lint authority without substituting a legacy toolchain.",
+          1800,
+          "COMMAND",
+          [
+            "$ npm run lint",
+            "Lint authority resolved from the selected workspace configuration.",
+            `Angular ${source} baseline lint evidence recorded.`,
+          ],
+          { command: "npm run lint" },
+        ),
+        genericStep(
+          "generic-baseline-qualification",
+          "Qualify baseline for G03",
+          "baseline.qualification.complete",
+          "Aggregate source-grounded build, test, lint, and workspace evidence before G03 review.",
+          1400,
+          "SYSTEM",
+          [
+            `Requested route: ${routeLabel || `angular-${source}.x -> angular-${target}.x`}`,
+            "Baseline evidence remains scoped to the selected source workspace.",
+            "G03 evidence package finalized.",
+          ],
+        ),
+      ],
+    };
+  }
+
+  if (kind === "ANALYSIS") {
+    return {
+      id: id(kind, startedAtMs),
+      kind,
+      status: "RUNNING",
+      startedAtMs,
+      steps: [
+        genericStep(
+          "generic-analysis-inputs",
+          "Freeze deterministic analysis inputs",
+          "analysis.input_manifest",
+          "Bind the accepted baseline, selected source identity, manifests, and code-context evidence.",
+          1200,
+          "SYSTEM",
+          [
+            `Source major bound: Angular ${source}`,
+            `Requested route bound: ${routeLabel || `angular-${source}.x -> angular-${target}.x`}`,
+            "Accepted baseline evidence attached.",
+            "Analysis input manifest checksum finalized.",
+          ],
+        ),
+        genericStep(
+          "generic-analysis-topology",
+          "Scan application topology",
+          "analysis.topology_scan",
+          "Classify the selected workspace structure, entrypoints, route boundaries, and build targets from source evidence.",
+          2400,
+          "SYSTEM",
+          [
+            `Selected Angular ${source} workspace topology scan started.`,
+            "Application entrypoints and route boundaries classified.",
+            "No source-specific repository facts were synthesized before inspection.",
+          ],
+        ),
+        genericStep(
+          "generic-analysis-dependencies",
+          "Inspect dependencies and tooling",
+          "analysis.dependency_tooling_scan",
+          "Record dependency, TypeScript, test, lint, and builder authorities that must be preserved through the route.",
+          2400,
+          "SYSTEM",
+          [
+            "Framework and third-party dependency boundaries classified.",
+            "Build, test, and lint authorities registered from the selected workspace.",
+            "Stage-specific compatibility work remains subject to G05 and G06 review.",
+          ],
+        ),
+        genericStep(
+          "generic-analysis-proposer",
+          "Analysis Proposer",
+          "analysis.phase_proposer",
+          "Interpret deterministic source evidence and produce structured migration findings.",
+          3500,
+          "LLM",
+          [
+            "Azure AI Foundry invocation started.",
+            "role=phase_proposer deployment=gpt-5-mini",
+            `Trusted source evidence: Angular ${source} workspace and requested route.`,
+            "Structured analysis response received.",
+          ],
+          { provider: "azure_foundry", deployment: "gpt-5-mini", role: "phase_proposer" },
+        ),
+        genericStep(
+          "generic-analysis-reviewer",
+          "Independent Phase Reviewer",
+          "analysis.phase_reviewer",
+          "Review findings for source fidelity, unsupported claims, and evidence coverage.",
+          3400,
+          "REVIEWER",
+          [
+            "Azure AI Foundry reviewer invocation started.",
+            "role=phase_reviewer deployment=Llama-3.3-70B-Instruct",
+            `Requested route verified: Angular ${source} -> Angular ${target}.`,
+            "Source-specific claims require linked evidence.",
+            "review verdict=accept",
+          ],
+          { provider: "azure_foundry", deployment: "Llama-3.3-70B-Instruct", role: "phase_reviewer" },
+        ),
+        genericStep(
+          "generic-analysis-finalize",
+          "Finalize G04 evidence package",
+          "analysis.g04.finalize",
+          "Persist selected source profile, findings, provenance, usage, and immutable evidence.",
+          1300,
+          "SYSTEM",
+          [
+            "Application profile persisted from selected source evidence.",
+            "Migration findings persisted with evidence references.",
+            "G04 review boundary opened.",
+          ],
+        ),
+      ],
+    };
+  }
+
+  if (kind === "FEASIBILITY") {
+    return {
+      id: id(kind, startedAtMs),
+      kind,
+      status: "RUNNING",
+      startedAtMs,
+      steps: [
+        genericStep(
+          "generic-compat-core",
+          "Evaluate Angular compatibility",
+          "compatibility.core",
+          `Check Angular ${source} to Angular ${target} compatibility under the adjacent-major route policy.`,
+          900,
+          "SYSTEM",
+          [
+            `Angular ${source} -> Angular ${target} route loaded.`,
+            "Adjacent-major compatibility policy accepted.",
+          ],
+        ),
+        genericStep(
+          "generic-compat-runtime",
+          "Resolve runtime compatibility",
+          "compatibility.runtime",
+          "Resolve certified Node/npm/CLI candidates for each requested stage.",
+          1000,
+          "SYSTEM",
+          [
+            `Runtime candidates resolved for ${routeStages.length || 1} stage(s).`,
+            "Exact runtime selection remains stage-scoped.",
+          ],
+        ),
+        genericStep(
+          "generic-compat-third-party",
+          "Scan third-party compatibility",
+          "compatibility.third_party",
+          "Classify selected workspace dependencies into compatible, migration-required, and review-required groups.",
+          1100,
+          "SYSTEM",
+          [
+            "Selected workspace dependency envelope inspected.",
+            "Migration-required and review-required items recorded without force resolution.",
+          ],
+        ),
+        genericStep(
+          "generic-compat-finalize",
+          "Finalize G05 readiness",
+          "compatibility.g05.finalize",
+          "Bind compatibility, runtime, dependency, and lockfile evidence for human review.",
+          700,
+          "SYSTEM",
+          ["Lockfile authority confirmed.", "G05 readiness package finalized."],
+        ),
+      ],
+    };
+  }
+
+  if (kind === "PLANNING") {
+    return {
+      id: id(kind, startedAtMs),
+      kind,
+      status: "RUNNING",
+      startedAtMs,
+      steps: [
+        genericStep(
+          "generic-planning-inputs",
+          "Resolve deterministic Planning inputs",
+          "planning.inputs.resolve",
+          "Bind accepted readiness evidence, selected source authority, route, runtime facts, and workspace fingerprint.",
+          3200,
+          "SYSTEM",
+          [
+            "G05 accepted compatibility evidence bound.",
+            `Source exact: Angular ${source}.x.`,
+            `Requested target: Angular ${target}.x.`,
+            "Package manager and lockfile authority resolved from the selected workspace.",
+          ],
+        ),
+        genericStep(
+          "generic-planning-route",
+          "Build deterministic MigrationPlan",
+          "planning.route.build",
+          "Generate the full adjacent-major route without authorizing execution.",
+          3600,
+          "SYSTEM",
+          [
+            "Mode: strict_compatibility.",
+            `Route: ${routeLabel || `angular-${source}.x -> angular-${target}.x`}.`,
+            "stage_plan_strategy=resolve_exact_before_each_stage",
+            "approval_policy=mandatory-human-v1",
+            "run_mode=PRODUCTION",
+          ],
+        ),
+        genericStep(
+          "generic-planning-first-stage",
+          "Resolve exact first StageExecutionPlan",
+          "planning.first_stage.resolve",
+          "Materialize only the first adjacent-major stage; later stages resolve from each sealed predecessor.",
+          4200,
+          "SYSTEM",
+          [
+            `Stage: angular-${source}.x -> angular-${firstTarget}.x.`,
+            "Exact source and target cohorts resolve from the compatibility catalogue.",
+            "execution_profile_id bound to stage runtime authority.",
+          ],
+        ),
+        genericStep(
+          "generic-planning-command-contract",
+          "Build structured command contract",
+          "planning.command_contract",
+          "Bind registry-backed command groups, workspace aliases, timeouts, cancellation, and parameter bindings.",
+          4500,
+          "SYSTEM",
+          [
+            "Structured command references use shell=false.",
+            "Working directory alias bound to governed stage workspace.",
+            "Bootstrap, install, build, test, and lint authorities resolved from the selected workspace.",
+            "Command contract checksum finalized.",
+          ],
+        ),
+        genericStep(
+          "generic-planning-policy-contract",
+          "Bind migration policies",
+          "planning.policy_contract",
+          "Bind validation, recovery, repair, and forbidden-change policies for the requested route.",
+          3600,
+          "SYSTEM",
+          [
+            "validation_policy=angular-stage-standard-v2",
+            "recovery_policy=safe-boundary-v1",
+            "repair_policy=proposer-reviewer-human-v1",
+            "Repair requires proposer + reviewer + human apply approval.",
+          ],
+        ),
+        genericStep(
+          "generic-planning-review",
+          "Review deterministic plan",
+          "planning.phase_reviewer",
+          "Review the route and first-stage contract for source fidelity and policy compliance.",
+          7200,
+          "REVIEWER",
+          [
+            "Azure AI Foundry reviewer invocation started.",
+            `Route verified: Angular ${source} -> Angular ${target}.`,
+            "No source or target major was substituted.",
+            "review verdict=accept",
+          ],
+          { provider: "azure_foundry", deployment: "Llama-3.3-70B-Instruct", role: "phase_reviewer" },
+        ),
+        genericStep(
+          "generic-planning-finalize",
+          "Finalize immutable G06 Planning package",
+          "planning.package.finalize",
+          "Persist plan, first-stage binding, proposer/reviewer outputs, checksums, and workspace evidence before G06.",
+          3900,
+          "SYSTEM",
+          [
+            "PlanningPackage review_status=accepted.",
+            "Proposer/reviewer usage ledger recorded.",
+            "Workspace fingerprint preserved.",
+            "G06 Migration Plan review boundary opened.",
+          ],
+        ),
+      ],
+    };
+  }
+
+  return createAngularLiveExecutionRaw(kind, startedAtMs, {
+    ...context,
+    source,
+    target,
+  });
 }
 
 function createAngularLiveExecutionRaw(

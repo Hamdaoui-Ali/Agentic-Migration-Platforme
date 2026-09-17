@@ -770,6 +770,8 @@ function progressApprovedGate(
       currentGate: null,
       currentAction: "Baseline execution running",
       liveExecution: createAngularLiveExecution("BASELINE", runtimeStartedAtMs, {
+        source: run.sourceMajor,
+        target: run.targetMajor,
         sourceProfile: run.sourceProfile,
       }),
     };
@@ -782,6 +784,8 @@ function progressApprovedGate(
       currentGate: null,
       currentAction: "Analysis Proposer and independent Reviewer are running",
       liveExecution: createAngularLiveExecution("ANALYSIS", runtimeStartedAtMs, {
+        source: run.sourceMajor,
+        target: run.targetMajor,
         sourceProfile: run.sourceProfile,
       }),
     };
@@ -795,6 +799,8 @@ function progressApprovedGate(
       currentAction: "Compatibility and migration readiness analysis running",
       analysis: { ...run.analysis, status: "APPROVED" },
       liveExecution: createAngularLiveExecution("FEASIBILITY", runtimeStartedAtMs, {
+        source: run.sourceMajor,
+        target: run.targetMajor,
         sourceProfile: run.sourceProfile,
       }),
     };
@@ -808,6 +814,8 @@ function progressApprovedGate(
       currentAction: "Planning Proposer and independent Reviewer are running",
       feasibility: { ...run.feasibility, status: "APPROVED" },
       liveExecution: createAngularLiveExecution("PLANNING", runtimeStartedAtMs, {
+        source: run.sourceMajor,
+        target: run.targetMajor,
         sourceProfile: run.sourceProfile,
       }),
     };
