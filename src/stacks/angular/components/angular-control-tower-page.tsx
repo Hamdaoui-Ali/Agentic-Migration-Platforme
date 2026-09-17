@@ -36,6 +36,7 @@ import {
   putAngularRun,
   resetAngularState,
 } from "../scenarios/angular-store";
+import { seedAngularRun } from "../scenarios/seeds";
 import { getAllowedPreTransformDecisions, applyAngularGateDecision } from "../workflow/run";
 import { advanceAngularLiveExecution } from "../workflow/live";
 import { applyAngularStageGateDecision, getAllowedStageDecisions } from "../workflow/proven";
@@ -75,7 +76,7 @@ const currentEpochMs = () => Date.now();
 export function AngularControlTowerPage() {
   const params = useParams<{ runId: string }>();
   const runId = Array.isArray(params.runId) ? params.runId[0] : params.runId;
-  const [run, setRun] = useState<AngularRunModel>(() => getAngularRun(runId));
+  const [run, setRun] = useState<AngularRunModel>(() => seedAngularRun(runId));
   const [active, setActive] = useState("overview");
   const [error, setError] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -97,6 +98,13 @@ export function AngularControlTowerPage() {
     () => getAutomationPreferenceSnapshot("angular"),
     getAutomationPreferenceServerSnapshot,
   );
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setRun(getAngularRun(runId));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [runId]);
 
   const liveExecution = run.liveExecution;
 
