@@ -28,7 +28,7 @@ The presenter mode uses 3× wall-clock playback while preserving logical phase d
 | Sequence | Route | What it shows |
 | --- | --- | --- |
 | 1 | `/` | Two stack entry points and the prepared migration list |
-| 2 | `/angular/migrations/run-angular-action?mode=recording` | Angular 11 → 21, a real repair review boundary, approval, revalidation and evidence |
+| 2 | `/angular/migrations/run-angular-action?mode=recording` | Angular Movies 18 → 21, a source-grounded Angular 18 → 19 repair review boundary, approval, revalidation and evidence |
 | 3 | `/java/migrations/java-repair-service?mode=recording` | Spring Boot 2.7 / Java 11 → 4.0 / Java 21, failed validation, reviewed repair and human decision |
 | 4 | `/java/migrations/java-terminal-service?mode=recording` | Completed terminal Stage 4 target-version review and final report |
 
